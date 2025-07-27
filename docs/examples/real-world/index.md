@@ -267,8 +267,8 @@ We welcome contributions of real-world examples! Please see our [Contributing Gu
 
 If you need help with any of these examples:
 
-1. Check the [Troubleshooting Guide](../../troubleshooting/common-issues.md)
-2. Review the [API Reference](../../api-reference/)
+1. Check the [Troubleshooting Guide](../../troubleshooting/debugging.md)
+2. Review the [API Reference](../../api-reference/index.md)
 3. Ask questions in [GitHub Discussions](https://github.com/tuanle96/zenoo-rpc/discussions)
 4. Report issues in [GitHub Issues](https://github.com/tuanle96/zenoo-rpc/issues)
 

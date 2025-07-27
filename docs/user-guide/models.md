@@ -461,4 +461,4 @@ except ValidationError as e:
 - [Query Builder](queries.md) - Learn advanced querying
 - [Relationships](relationships.md) - Master relationship handling
 - [Caching](caching.md) - Optimize with caching
-- [API Reference](../api-reference/models/) - Complete model API
+- [API Reference](../api-reference/models/index.md) - Complete model API

@@ -400,8 +400,8 @@ After migration, you should see:
 
 If you encounter issues during migration:
 
-1. Check the [Troubleshooting Guide](../troubleshooting/common-issues.md)
-2. Review [API Reference](../api-reference/) for detailed documentation
+1. Check the [Troubleshooting Guide](../troubleshooting/debugging.md)
+2. Review [API Reference](../api-reference/index.md) for detailed documentation
 3. Ask questions in [GitHub Discussions](https://github.com/tuanle96/zenoo-rpc/discussions)
 4. Report bugs in [GitHub Issues](https://github.com/tuanle96/zenoo-rpc/issues)
 
@@ -409,7 +409,7 @@ If you encounter issues during migration:
 
 After migration:
 
-1. **[User Guide](../user-guide/)** - Learn advanced features
+1. **[User Guide](../user-guide/client.md)** - Learn advanced features
 2. **[Performance Optimization](../tutorials/performance-optimization.md)** - Optimize your code
 3. **[Testing Strategies](../tutorials/testing.md)** - Test your migrated code
 4. **[Production Deployment](../tutorials/production-deployment.md)** - Deploy with confidence

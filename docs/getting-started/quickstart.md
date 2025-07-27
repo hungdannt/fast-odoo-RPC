@@ -335,4 +335,4 @@ This example shows:
 - Transaction usage for data integrity
 - Batch operations
 
-Ready to dive deeper? Check out our [User Guide](../user-guide/) for comprehensive documentation on all features!
+Ready to dive deeper? Check out our [User Guide](../user-guide/client.md) for comprehensive documentation on all features!

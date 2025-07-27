@@ -2,17 +2,7 @@ site_name: Zenoo RPC Documentation
 site_description: Modern async Python library for Odoo RPC with type safety, intelligent caching, and superior developer experience. Replace odoorpc with async/await, Pydantic models, and performance optimization.
 site_author: Lê Anh Tuấn
 site_url: https://zenoo-rpc.readthedocs.io
-site_keywords:
-- python
-- odoo
-- rpc
-- async
-- pydantic
-- type-safety
-- orm
-- api
-- client
-- performance
+# site_keywords not supported in MkDocs - moved to extra.keywords
 
 repo_name: tuanle96/zenoo-rpc
 repo_url: https://github.com/tuanle96/zenoo-rpc
@@ -143,8 +133,7 @@ markdown_extensions:
 plugins:
 - search:
     separator: '[\s\-,:!=\[\]()"`/]+|\.(?!\d)|&[lg]t;|(?!\b)(?=[A-Z][a-z])'
-- minify:
-    minify_html: true
+# minify plugin not installed - removed for ReadTheDocs compatibility
 - mkdocstrings:
     handlers:
       python:
@@ -198,41 +187,38 @@ nav:
   - Overview: api-reference/index.md
   - Client: api-reference/client.md
   - Models:
-    - Base Classes: api-reference/models/base.md
-    - Common Models: api-reference/models/common.md
+    - Overview: api-reference/models/index.md
     - Fields: api-reference/models/fields.md
-    - Registry: api-reference/models/registry.md
+    - Relationships: api-reference/models/relationships.md
   - Query:
-    - Builder: api-reference/query/builder.md
+    - Overview: api-reference/query/index.md
     - Expressions: api-reference/query/expressions.md
     - Filters: api-reference/query/filters.md
   - Cache:
-    - Manager: api-reference/cache/manager.md
+    - Overview: api-reference/cache/index.md
     - Backends: api-reference/cache/backends.md
     - Strategies: api-reference/cache/strategies.md
   - Transaction:
-    - Manager: api-reference/transaction/manager.md
+    - Overview: api-reference/transaction/index.md
     - Context: api-reference/transaction/context.md
   - Batch:
-    - Manager: api-reference/batch/manager.md
+    - Overview: api-reference/batch/index.md
     - Operations: api-reference/batch/operations.md
   - Retry:
+    - Overview: api-reference/retry/index.md
     - Strategies: api-reference/retry/strategies.md
     - Policies: api-reference/retry/policies.md
-    - Decorators: api-reference/retry/decorators.md
   - Exceptions:
-    - Base: api-reference/exceptions/base.md
-    - Mapping: api-reference/exceptions/mapping.md
+    - Overview: api-reference/exceptions/index.md
 
 - Advanced:
-  - Architecture Overview: advanced/architecture.md
-  - Performance Considerations: advanced/performance.md
-  - Security Best Practices: advanced/security.md
-  - Extending Zenoo RPC: advanced/extending.md
-  - Internal Implementation: advanced/internals.md
+  - Overview: advanced/index.md
+  - Architecture: advanced/architecture.md
+  - Performance: advanced/performance.md
+  - Security: advanced/security.md
+  - Extensions: advanced/extensions.md
 
 - Troubleshooting:
-  - Common Issues: troubleshooting/common-issues.md
   - Debugging Guide: troubleshooting/debugging.md
   - FAQ: troubleshooting/faq.md
 
