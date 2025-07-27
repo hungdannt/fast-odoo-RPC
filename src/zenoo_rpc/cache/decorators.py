@@ -849,7 +849,7 @@ def _build_function_cache_key(
 
         # Create hash of arguments
         arg_str = json.dumps(arg_signature, sort_keys=True, default=str)
-        arg_hash = hashlib.md5(arg_str.encode()).hexdigest()[:8]
+        arg_hash = hashlib.md5(arg_str.encode(), usedforsecurity=False).hexdigest()[:8]
         key_parts.append(arg_hash)
 
     return ":".join(key_parts)

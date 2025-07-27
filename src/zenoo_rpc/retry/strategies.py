@@ -144,18 +144,18 @@ class RetryStrategy(ABC):
         """
         if self.jitter_type == "full":
             # Full jitter: random between 0 and delay
-            return random.uniform(0, delay)
+            return random.uniform(0, delay)  # nosec B311
         elif self.jitter_type == "equal":
             # Equal jitter: delay/2 + random(0, delay/2)
             half_delay = delay / 2
-            return half_delay + random.uniform(0, half_delay)
+            return half_delay + random.uniform(0, half_delay)  # nosec B311
         elif self.jitter_type == "decorrelated":
             # Decorrelated jitter: random between base/3 and delay
-            return random.uniform(delay / 3, delay)
+            return random.uniform(delay / 3, delay)  # nosec B311
         else:
             # Default: ±25% jitter (legacy behavior)
             jitter_range = delay * 0.25
-            jittered = delay + random.uniform(-jitter_range, jitter_range)
+            jittered = delay + random.uniform(-jitter_range, jitter_range)  # nosec B311
             return max(0, jittered)
 
     def should_retry(self, attempt: int, exception: Exception) -> bool:
@@ -505,7 +505,7 @@ class DecorrelatedJitterStrategy(RetryStrategy):
         min_delay = self.base_delay
         max_delay = min(self._previous_delay * 3, self.cap)
 
-        delay = random.uniform(min_delay, max_delay)
+        delay = random.uniform(min_delay, max_delay)  # nosec B311
         self._previous_delay = delay
 
         return delay

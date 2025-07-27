@@ -7,7 +7,7 @@ in-memory and Redis implementations with async support.
 
 import asyncio
 import json
-import pickle
+import pickle  # nosec B403
 import time
 from abc import ABC, abstractmethod
 from typing import Any, Dict, Optional, Union
@@ -594,7 +594,9 @@ class RedisCache(CacheBackend):
             if self.serializer == "json":
                 return json.loads(data.decode("utf-8"))
             elif self.serializer == "pickle":
-                return pickle.loads(data)
+                # WARNING: pickle.loads() can be unsafe with untrusted data
+                # Only use with trusted cache backends and data sources
+                return pickle.loads(data)  # nosec B301
             else:
                 raise CacheSerializationError(
                     f"Unknown serializer: {self.serializer}"
@@ -753,7 +755,7 @@ class RedisCache(CacheBackend):
         except Exception as e:
             self._errors += 1
             logger.error(f"Redis cache delete error: {e}")
-            raise CacheBackendError(f"Failed to delete from Redis: {e}")
+            raise CacheBackendError(f"Failed to delete from Redis: {e}")  # nosec B608
 
     async def exists(self, key: Union[str, CacheKey]) -> bool:
         """Check if a key exists in Redis cache."""
@@ -845,6 +847,6 @@ class RedisCache(CacheBackend):
                     }
                 )
             except Exception:
-                pass  # Ignore errors getting Redis info
+                pass  # nosec B110 - Ignore errors getting Redis info
 
         return stats

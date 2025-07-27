@@ -239,7 +239,7 @@ class SavepointContext:
                 await self.transaction.rollback_to_savepoint(self.created_savepoint)
             except Exception:
                 # If savepoint rollback fails, let the original exception propagate
-                pass
+                pass  # nosec B110
 
         return False  # Don't suppress exceptions
 

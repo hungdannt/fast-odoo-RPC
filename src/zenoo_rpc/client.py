@@ -805,7 +805,7 @@ class ZenooClient:
         except Exception as e:
             # If we can't validate, log warning but don't fail
             # This allows operation to proceed and let Odoo handle validation
-            pass
+            pass  # nosec B110
 
     async def _handle_crud_error(
         self,

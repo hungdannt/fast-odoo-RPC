@@ -571,7 +571,7 @@ class QuerySet(AsyncIterable[T]):
 
         # Create a hash of the query data
         query_str = json.dumps(query_data, sort_keys=True)
-        query_hash = hashlib.md5(query_str.encode()).hexdigest()
+        query_hash = hashlib.md5(query_str.encode(), usedforsecurity=False).hexdigest()
 
         return f"query:{self.model_class.get_odoo_name()}:{query_hash}"
 
