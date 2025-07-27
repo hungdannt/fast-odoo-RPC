@@ -17,6 +17,7 @@ help:
 	@echo "  test-redis       Run Redis cache tests (requires Redis)"
 	@echo "  test-transaction Run transaction tests"
 	@echo "  test-coverage    Run tests with coverage report"
+	@echo "  upload-coverage  Upload coverage to Codecov"
 	@echo ""
 	@echo "🐳 Redis Testing:"
 	@echo "  setup-redis      Start Redis test container"
@@ -59,7 +60,11 @@ test-transaction:
 	python -m pytest tests/test_transaction_comprehensive.py -v
 
 test-coverage:
-	python -m pytest --cov=src/zenoo_rpc --cov-report=html --cov-report=term
+	python -m pytest tests/ --cov=src/zenoo_rpc --cov-report=xml --cov-report=html --cov-report=term-missing --ignore=tests/performance/test_zenoo_vs_odoorpc_benchmark.py --tb=short
+
+upload-coverage:
+	@echo "📤 Uploading coverage to Codecov..."
+	./scripts/upload_coverage.sh
 
 # Redis management
 setup-redis:
