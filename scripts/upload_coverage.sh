@@ -34,7 +34,7 @@ if [ -f "coverage.xml" ]; then
     # Use token from environment or default
     TOKEN=${CODECOV_TOKEN:-"35c1eecb-cf87-4f07-900a-56b2a0d9790d"}
 
-    codecov -f coverage.xml -t $TOKEN
+    codecov -f coverage.xml -t $TOKEN --slug tuanle96/zenoo-rpc
     echo "✅ Coverage uploaded successfully!"
 else
     echo "❌ coverage.xml not found. Coverage upload skipped."
