@@ -30,7 +30,11 @@ fi
 # Upload to codecov if coverage.xml exists
 if [ -f "coverage.xml" ]; then
     echo "📤 Uploading coverage to Codecov..."
-    codecov -f coverage.xml -t $CODECOV_TOKEN
+
+    # Use token from environment or default
+    TOKEN=${CODECOV_TOKEN:-"35c1eecb-cf87-4f07-900a-56b2a0d9790d"}
+
+    codecov -f coverage.xml -t $TOKEN
     echo "✅ Coverage uploaded successfully!"
 else
     echo "❌ coverage.xml not found. Coverage upload skipped."
