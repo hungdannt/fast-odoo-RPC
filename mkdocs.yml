@@ -1,0 +1,246 @@
+site_name: Zenoo RPC Documentation
+site_description: Modern async Python library for Odoo RPC with type safety, intelligent caching, and superior developer experience. Replace odoorpc with async/await, Pydantic models, and performance optimization.
+site_author: Lê Anh Tuấn
+site_url: https://zenoo-rpc.readthedocs.io
+site_keywords:
+- python
+- odoo
+- rpc
+- async
+- pydantic
+- type-safety
+- orm
+- api
+- client
+- performance
+
+repo_name: tuanle96/zenoo-rpc
+repo_url: https://github.com/tuanle96/zenoo-rpc
+edit_uri: edit/main/docs/
+
+copyright: Copyright &copy; 2024 Lê Anh Tuấn
+
+theme:
+  name: material
+  language: en
+  custom_dir: docs/overrides
+  palette:
+  # Palette toggle for light mode
+  - scheme: default
+    primary: blue
+    accent: blue
+    toggle:
+      icon: material/brightness-7
+      name: Switch to dark mode
+  # Palette toggle for dark mode
+  - scheme: slate
+    primary: blue
+    accent: blue
+    toggle:
+      icon: material/brightness-4
+      name: Switch to light mode
+
+  font:
+    text: Roboto
+    code: Roboto Mono
+
+  features:
+  - navigation.tabs
+  - navigation.tabs.sticky
+  - navigation.sections
+  - navigation.expand
+  - navigation.path
+  - navigation.top
+  - search.highlight
+  - search.share
+  - search.suggest
+  - content.code.copy
+  - content.code.annotate
+  - content.tabs.link
+  - content.tooltips
+  - content.action.edit
+  - content.action.view
+
+  icon:
+    repo: fontawesome/brands/github
+    edit: material/pencil
+    view: material/eye
+
+extra:
+  version:
+    provider: mike
+  social:
+  - icon: fontawesome/brands/github
+    link: https://github.com/tuanle96/zenoo-rpc
+    name: GitHub Repository
+  - icon: fontawesome/brands/python
+    link: https://pypi.org/project/zenoo-rpc/
+    name: PyPI Package
+  - icon: fontawesome/solid/book
+    link: https://zenoo-rpc.readthedocs.io
+    name: Documentation
+  analytics:
+    provider: google
+    property: G-XXXXXXXXXX # Replace with actual GA4 property
+  tags:
+    Python: python
+    Odoo: odoo
+    RPC: rpc
+    Async: async
+    "Type Safety": type-safety
+    Performance: performance
+    Caching: caching
+    Transactions: transactions
+  generator: false # Remove "Made with Material for MkDocs"
+
+extra_css:
+- stylesheets/extra.css
+
+extra_javascript:
+- javascripts/extra.js
+
+markdown_extensions:
+- abbr
+- admonition
+- attr_list
+- def_list
+- footnotes
+- md_in_html
+- toc:
+    permalink: true
+- pymdownx.arithmatex:
+    generic: true
+- pymdownx.betterem:
+    smart_enable: all
+- pymdownx.caret
+- pymdownx.details
+- pymdownx.emoji:
+    emoji_generator: !!python/name:material.extensions.emoji.to_svg ""
+    emoji_index: !!python/name:material.extensions.emoji.twemoji ""
+- pymdownx.highlight:
+    anchor_linenums: true
+    line_spans: __span
+    pygments_lang_class: true
+- pymdownx.inlinehilite
+- pymdownx.keys
+- pymdownx.magiclink:
+    repo_url_shorthand: true
+    user: tuanle96
+    repo: zenoo-rpc
+- pymdownx.mark
+- pymdownx.smartsymbols
+- pymdownx.superfences:
+    custom_fences:
+    - name: mermaid
+      class: mermaid
+      format: !!python/name:pymdownx.superfences.fence_code_format ""
+- pymdownx.tabbed:
+    alternate_style: true
+- pymdownx.tasklist:
+    custom_checkbox: true
+- pymdownx.tilde
+
+plugins:
+- search:
+    separator: '[\s\-,:!=\[\]()"`/]+|\.(?!\d)|&[lg]t;|(?!\b)(?=[A-Z][a-z])'
+- minify:
+    minify_html: true
+- mkdocstrings:
+    handlers:
+      python:
+        options:
+          docstring_style: google
+          docstring_options:
+            ignore_init_summary: true
+          merge_init_into_class: true
+          show_submodules: false
+          show_source: true
+          show_root_heading: true
+          show_root_toc_entry: true
+          show_symbol_type_heading: true
+          show_symbol_type_toc: true
+          signature_crossrefs: true
+          separate_signature: true
+
+nav:
+- Home: index.md
+
+- Getting Started:
+  - Installation: getting-started/installation.md
+  - Quick Start: getting-started/quickstart.md
+  - Migration from odoorpc: getting-started/migration.md
+
+- User Guide:
+  - Client Usage: user-guide/client.md
+  - Models & Type Safety: user-guide/models.md
+  - Query Builder: user-guide/queries.md
+  - Relationships: user-guide/relationships.md
+  - Caching System: user-guide/caching.md
+  - Transactions: user-guide/transactions.md
+  - Batch Operations: user-guide/batch-operations.md
+  - Retry Mechanisms: user-guide/retry-mechanisms.md
+  - Error Handling: user-guide/error-handling.md
+  - Configuration: user-guide/configuration.md
+
+- Tutorials:
+  - Basic CRUD Operations: tutorials/basic-crud.md
+  - Advanced Queries: tutorials/advanced-queries.md
+  - Performance Optimization: tutorials/performance-optimization.md
+  - Testing Strategies: tutorials/testing.md
+  - Production Deployment: tutorials/production-deployment.md
+
+- Examples:
+  - Real-World Examples: examples/real-world/index.md
+  - Common Patterns: examples/patterns/index.md
+  - Integration Examples: examples/integrations/index.md
+
+- API Reference:
+  - Overview: api-reference/index.md
+  - Client: api-reference/client.md
+  - Models:
+    - Base Classes: api-reference/models/base.md
+    - Common Models: api-reference/models/common.md
+    - Fields: api-reference/models/fields.md
+    - Registry: api-reference/models/registry.md
+  - Query:
+    - Builder: api-reference/query/builder.md
+    - Expressions: api-reference/query/expressions.md
+    - Filters: api-reference/query/filters.md
+  - Cache:
+    - Manager: api-reference/cache/manager.md
+    - Backends: api-reference/cache/backends.md
+    - Strategies: api-reference/cache/strategies.md
+  - Transaction:
+    - Manager: api-reference/transaction/manager.md
+    - Context: api-reference/transaction/context.md
+  - Batch:
+    - Manager: api-reference/batch/manager.md
+    - Operations: api-reference/batch/operations.md
+  - Retry:
+    - Strategies: api-reference/retry/strategies.md
+    - Policies: api-reference/retry/policies.md
+    - Decorators: api-reference/retry/decorators.md
+  - Exceptions:
+    - Base: api-reference/exceptions/base.md
+    - Mapping: api-reference/exceptions/mapping.md
+
+- Advanced:
+  - Architecture Overview: advanced/architecture.md
+  - Performance Considerations: advanced/performance.md
+  - Security Best Practices: advanced/security.md
+  - Extending Zenoo RPC: advanced/extending.md
+  - Internal Implementation: advanced/internals.md
+
+- Troubleshooting:
+  - Common Issues: troubleshooting/common-issues.md
+  - Debugging Guide: troubleshooting/debugging.md
+  - FAQ: troubleshooting/faq.md
+
+- Contributing:
+  - Development Setup: contributing/development.md
+  - Testing Guidelines: contributing/testing.md
+  - Documentation Guidelines: contributing/documentation.md
+  - Release Process: contributing/release.md
+
+watch:
+- src/zenoo_rpc

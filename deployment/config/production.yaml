@@ -1,0 +1,260 @@
+# Zenoo-RPC Production Configuration
+# This configuration is optimized for production deployment
+
+# Application Settings
+app:
+  name: "zenoo-rpc"
+  version: "1.0.0"
+  environment: "production"
+  debug: false
+
+# Server Configuration
+server:
+  host: "0.0.0.0"
+  port: 8000
+  workers: 4
+  worker_class: "uvicorn.workers.UvicornWorker"
+  worker_connections: 1000
+  max_requests: 10000
+  max_requests_jitter: 1000
+  timeout: 300
+  keep_alive: 5
+  preload: true
+
+# Database Configuration
+database:
+  url: "${DATABASE_URL}"
+  pool_size: 20
+  max_overflow: 30
+  pool_timeout: 30
+  pool_recycle: 3600
+  echo: false
+  echo_pool: false
+
+# Cache Configuration
+cache:
+  # Primary cache backend
+  backend: "redis"
+
+  # Redis configuration
+  redis:
+    url: "${REDIS_URL}"
+    max_connections: 20
+    retry_attempts: 3
+    retry_backoff_base: 0.1
+    retry_backoff_max: 2.0
+    health_check_interval: 30
+    circuit_breaker_threshold: 5
+    circuit_breaker_timeout: 60
+    enable_fallback: true
+    connection_timeout: 5
+    socket_timeout: 5
+    socket_keepalive: true
+    socket_keepalive_options: {}
+
+  # Memory fallback configuration
+  memory:
+    max_size: 10000
+    default_ttl: 300
+    cleanup_interval: 60
+
+  # Cache strategies
+  default_ttl: 3600
+  namespace: "zenoo:prod"
+  serializer: "json"
+  compression: true
+
+# Transaction Configuration
+transaction:
+  max_active_transactions: 100
+  default_timeout: 300
+  max_savepoints: 10
+  enable_savepoints: true
+  isolation_level: "READ_COMMITTED"
+  autocommit: false
+
+  # Performance settings
+  operation_batch_size: 1000
+  max_operation_history: 10000
+  cleanup_interval: 300
+
+# Batch Configuration
+batch:
+  max_chunk_size: 100
+  max_concurrency: 10
+  timeout: 600
+  retry_attempts: 3
+  retry_backoff: 1.0
+
+  # Performance settings
+  enable_parallel_execution: true
+  max_memory_usage: "512MB"
+  progress_reporting: true
+
+# Connection Pool Configuration
+connection_pool:
+  max_connections: 50
+  min_connections: 5
+  connection_timeout: 30
+  idle_timeout: 300
+  max_lifetime: 3600
+  health_check_interval: 60
+
+# Security Configuration
+security:
+  # API Security
+  api_key_required: true
+  rate_limiting:
+    enabled: true
+    requests_per_minute: 1000
+    burst_size: 100
+
+  # CORS settings
+  cors:
+    allow_origins: [ "https://yourdomain.com" ]
+    allow_methods: [ "GET", "POST", "PUT", "DELETE" ]
+    allow_headers: [ "*" ]
+    allow_credentials: true
+
+  # SSL/TLS
+  ssl:
+    enabled: true
+    cert_file: "/app/ssl/cert.pem"
+    key_file: "/app/ssl/key.pem"
+
+# Logging Configuration
+logging:
+  version: 1
+  disable_existing_loggers: false
+
+  formatters:
+    standard:
+      format: "%(asctime)s [%(levelname)s] %(name)s: %(message)s"
+      datefmt: "%Y-%m-%d %H:%M:%S"
+
+    json:
+      format: '{"timestamp": "%(asctime)s", "level": "%(levelname)s", "logger": "%(name)s", "message": "%(message)s", "module": "%(module)s", "function": "%(funcName)s", "line": %(lineno)d}'
+      datefmt: "%Y-%m-%dT%H:%M:%S"
+
+  handlers:
+    console:
+      class: logging.StreamHandler
+      level: INFO
+      formatter: standard
+      stream: ext://sys.stdout
+
+    file:
+      class: logging.handlers.RotatingFileHandler
+      level: INFO
+      formatter: json
+      filename: /app/logs/zenoo-rpc.log
+      maxBytes: 10485760 # 10MB
+      backupCount: 5
+
+    error_file:
+      class: logging.handlers.RotatingFileHandler
+      level: ERROR
+      formatter: json
+      filename: /app/logs/zenoo-rpc-error.log
+      maxBytes: 10485760 # 10MB
+      backupCount: 5
+
+  loggers:
+    zenoo_rpc:
+      level: INFO
+      handlers: [ console, file, error_file ]
+      propagate: false
+
+    uvicorn:
+      level: INFO
+      handlers: [ console, file ]
+      propagate: false
+
+    uvicorn.access:
+      level: INFO
+      handlers: [ file ]
+      propagate: false
+
+    sqlalchemy.engine:
+      level: WARNING
+      handlers: [ file ]
+      propagate: false
+
+  root:
+    level: INFO
+    handlers: [ console, file ]
+
+# Monitoring Configuration
+monitoring:
+  # Metrics
+  metrics:
+    enabled: true
+    endpoint: "/metrics"
+    include_in_schema: false
+
+  # Health checks
+  health:
+    enabled: true
+    endpoint: "/health"
+    checks:
+    - database
+    - cache
+    - redis
+
+  # Performance monitoring
+  performance:
+    enabled: true
+    slow_query_threshold: 1.0
+    track_memory_usage: true
+    track_cpu_usage: true
+
+# Feature Flags
+features:
+  enable_caching: true
+  enable_transactions: true
+  enable_batch_operations: true
+  enable_metrics: true
+  enable_tracing: false
+  enable_profiling: false
+
+# Resource Limits
+limits:
+  max_request_size: "10MB"
+  max_response_size: "50MB"
+  max_concurrent_requests: 1000
+  request_timeout: 300
+
+  # Memory limits
+  max_memory_usage: "1GB"
+  gc_threshold: "800MB"
+
+  # CPU limits
+  max_cpu_usage: 80 # percentage
+
+# Backup Configuration
+backup:
+  enabled: true
+  schedule: "0 2 * * *" # Daily at 2 AM
+  retention_days: 30
+  storage:
+    type: "s3"
+    bucket: "zenoo-backups"
+    prefix: "production/"
+
+# Environment-specific overrides
+overrides:
+  development:
+    app:
+      debug: true
+    logging:
+      loggers:
+        zenoo_rpc:
+          level: DEBUG
+
+  staging:
+    cache:
+      redis:
+        circuit_breaker_threshold: 3
+    monitoring:
+      performance:
+        slow_query_threshold: 0.5

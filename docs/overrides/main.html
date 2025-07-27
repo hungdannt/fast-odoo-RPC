@@ -1,0 +1,141 @@
+{% extends "base.html" %}
+
+{% block htmltitle %}
+  {% if page and page.title and not page.is_homepage %}
+    <title>{{ page.title | striptags }} - {{ config.site_name }}</title>
+  {% else %}
+    <title>{{ config.site_name }} - {{ config.site_description }}</title>
+  {% endif %}
+{% endblock %}
+
+{% block extrahead %}
+  <!-- SEO Meta Tags -->
+  <meta name="description" content="{% if page and page.meta and page.meta.description %}{{ page.meta.description }}{% else %}{{ config.site_description }}{% endif %}">
+  <meta name="keywords" content="{% if page and page.meta and page.meta.keywords %}{{ page.meta.keywords }}{% else %}python, odoo, rpc, async, pydantic, type-safety, orm, api, client, performance, caching, transactions{% endif %}">
+  <meta name="author" content="{{ config.site_author }}">
+  <meta name="robots" content="index, follow">
+  <meta name="language" content="en">
+  <meta name="revisit-after" content="7 days">
+  
+  <!-- Open Graph Meta Tags -->
+  <meta property="og:title" content="{% if page and page.title and not page.is_homepage %}{{ page.title | striptags }} - {{ config.site_name }}{% else %}{{ config.site_name }}{% endif %}">
+  <meta property="og:description" content="{% if page and page.meta and page.meta.description %}{{ page.meta.description }}{% else %}{{ config.site_description }}{% endif %}">
+  <meta property="og:type" content="website">
+  <meta property="og:url" content="{{ page.canonical_url }}">
+  <meta property="og:site_name" content="{{ config.site_name }}">
+  <meta property="og:image" content="{{ config.site_url }}/assets/images/zenoo-rpc-social.png">
+  <meta property="og:image:width" content="1200">
+  <meta property="og:image:height" content="630">
+  <meta property="og:locale" content="en_US">
+  
+  <!-- Twitter Card Meta Tags -->
+  <meta name="twitter:card" content="summary_large_image">
+  <meta name="twitter:title" content="{% if page and page.title and not page.is_homepage %}{{ page.title | striptags }} - {{ config.site_name }}{% else %}{{ config.site_name }}{% endif %}">
+  <meta name="twitter:description" content="{% if page and page.meta and page.meta.description %}{{ page.meta.description }}{% else %}{{ config.site_description }}{% endif %}">
+  <meta name="twitter:image" content="{{ config.site_url }}/assets/images/zenoo-rpc-social.png">
+  <meta name="twitter:site" content="@zenoorpc">
+  <meta name="twitter:creator" content="@tuanle96">
+  
+  <!-- Additional SEO Meta Tags -->
+  <meta name="theme-color" content="#2196f3">
+  <meta name="msapplication-TileColor" content="#2196f3">
+  <meta name="application-name" content="{{ config.site_name }}">
+  
+  <!-- Canonical URL -->
+  <link rel="canonical" href="{{ page.canonical_url }}">
+  
+  <!-- JSON-LD Structured Data -->
+  <script type="application/ld+json">
+  {
+    "@context": "https://schema.org",
+    "@type": "SoftwareApplication",
+    "name": "Zenoo RPC",
+    "description": "{{ config.site_description }}",
+    "url": "{{ config.site_url }}",
+    "downloadUrl": "https://pypi.org/project/zenoo-rpc/",
+    "author": {
+      "@type": "Person",
+      "name": "{{ config.site_author }}"
+    },
+    "programmingLanguage": "Python",
+    "operatingSystem": "Cross-platform",
+    "applicationCategory": "DeveloperApplication",
+    "offers": {
+      "@type": "Offer",
+      "price": "0",
+      "priceCurrency": "USD"
+    },
+    "license": "https://opensource.org/licenses/MIT",
+    "codeRepository": "{{ config.repo_url }}",
+    "documentation": "{{ config.site_url }}",
+    "keywords": "python, odoo, rpc, async, pydantic, type-safety, orm, api, client, performance"
+  }
+  </script>
+  
+  <!-- Additional structured data for documentation -->
+  {% if page and page.title and not page.is_homepage %}
+  <script type="application/ld+json">
+  {
+    "@context": "https://schema.org",
+    "@type": "TechArticle",
+    "headline": "{{ page.title | striptags }}",
+    "description": "{% if page and page.meta and page.meta.description %}{{ page.meta.description }}{% else %}{{ config.site_description }}{% endif %}",
+    "url": "{{ page.canonical_url }}",
+    "datePublished": "2024-12-01",
+    "dateModified": "2024-12-01",
+    "author": {
+      "@type": "Person",
+      "name": "{{ config.site_author }}"
+    },
+    "publisher": {
+      "@type": "Organization",
+      "name": "Zenoo RPC",
+      "url": "{{ config.site_url }}"
+    },
+    "mainEntityOfPage": {
+      "@type": "WebPage",
+      "@id": "{{ page.canonical_url }}"
+    },
+    "about": {
+      "@type": "SoftwareApplication",
+      "name": "Zenoo RPC"
+    }
+  }
+  </script>
+  {% endif %}
+  
+  <!-- Preconnect to external domains -->
+  <link rel="preconnect" href="https://fonts.googleapis.com">
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+  <link rel="preconnect" href="https://www.google-analytics.com">
+  
+  <!-- DNS prefetch for performance -->
+  <link rel="dns-prefetch" href="//github.com">
+  <link rel="dns-prefetch" href="//pypi.org">
+  <link rel="dns-prefetch" href="//readthedocs.io">
+  
+  <!-- Favicon and app icons -->
+  <link rel="icon" type="image/x-icon" href="{{ config.site_url }}/assets/images/favicon.ico">
+  <link rel="icon" type="image/png" sizes="32x32" href="{{ config.site_url }}/assets/images/favicon-32x32.png">
+  <link rel="icon" type="image/png" sizes="16x16" href="{{ config.site_url }}/assets/images/favicon-16x16.png">
+  <link rel="apple-touch-icon" sizes="180x180" href="{{ config.site_url }}/assets/images/apple-touch-icon.png">
+  <link rel="manifest" href="{{ config.site_url }}/assets/manifest.json">
+  
+  <!-- Performance hints -->
+  <link rel="prefetch" href="{{ config.site_url }}/getting-started/installation/">
+  <link rel="prefetch" href="{{ config.site_url }}/getting-started/quickstart/">
+  <link rel="prefetch" href="{{ config.site_url }}/user-guide/client/">
+{% endblock %}
+
+{% block announce %}
+  <div class="md-banner">
+    <div class="md-banner__inner md-grid md-typeset">
+      <div class="md-banner__content">
+        🚀 <strong>Zenoo RPC v0.3.0</strong> is now available with advanced features like caching, transactions, and batch operations!
+        <a href="{{ config.site_url }}/getting-started/installation/" class="md-button md-button--primary">
+          Get Started
+        </a>
+      </div>
+    </div>
+  </div>
+{% endblock %}

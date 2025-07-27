@@ -1,0 +1,84 @@
+{
+  "metadata": {
+    "report_id": "benchmark_1753585394",
+    "timestamp": "2025-07-27T10:03:14.128062",
+    "generator": "zenoo_rpc_benchmark",
+    "version": "1.0.0"
+  },
+  "test_configuration": {
+    "config": {
+      "use_real_server": false,
+      "scenarios_to_run": [
+        "crud_light_load",
+        "crud_medium_load",
+        "crud_heavy_load",
+        "stress_concurrent_reads",
+        "memory_large_datasets",
+        "workflow_sales_process"
+      ],
+      "include_stress_tests": true,
+      "include_endurance_tests": false,
+      "generate_html_report": true,
+      "generate_charts": false,
+      "output_dir": "comprehensive_benchmark_results"
+    },
+    "test_duration": 32.799055,
+    "scenarios_run": 6,
+    "timestamp": "2025-07-27T10:03:14.128142"
+  },
+  "results": {
+    "crud_light_load": {
+      "scenario": {},
+      "zenoo_rpc": {},
+      "odoorpc": {},
+      "comparison": {}
+    },
+    "crud_medium_load": {
+      "scenario": {},
+      "zenoo_rpc": {},
+      "odoorpc": {},
+      "comparison": {}
+    },
+    "crud_heavy_load": {
+      "scenario": {},
+      "zenoo_rpc": {},
+      "odoorpc": {},
+      "comparison": {}
+    },
+    "stress_concurrent_reads": {
+      "scenario": {},
+      "zenoo_rpc": {},
+      "odoorpc": {},
+      "comparison": {}
+    },
+    "memory_large_datasets": {
+      "scenario": {},
+      "zenoo_rpc": {},
+      "odoorpc": {},
+      "comparison": {}
+    },
+    "workflow_sales_process": {
+      "scenario": {},
+      "zenoo_rpc": {},
+      "odoorpc": {},
+      "comparison": {}
+    }
+  },
+  "summary": {
+    "overall_improvement": 0,
+    "best_improvement": 0,
+    "best_scenario": "",
+    "avg_throughput_improvement": 0,
+    "scenarios_count": 6
+  },
+  "recommendations": [
+    "\ud83d\udd27 Enable intelligent caching for frequently accessed data",
+    "\ud83d\udcca Implement batch operations for bulk data processing",
+    "\ud83d\udd04 Use connection pooling for high-concurrency scenarios",
+    "\ud83d\udcc8 Set up performance monitoring in production",
+    "\ud83d\udee1\ufe0f Implement circuit breaker patterns for resilience",
+    "\u2699\ufe0f Optimize async/await usage for maximum performance benefits",
+    "\ud83d\udccb Conduct load testing before production deployment",
+    "\ud83d\udd0d Monitor memory usage patterns and optimize as needed"
+  ]
+}

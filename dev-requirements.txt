@@ -1,0 +1,14 @@
+# Testing dependencies
+pytest>=7.0.0
+pytest-asyncio>=0.21.0
+pytest-mock>=3.10.0
+pytest-benchmark>=4.0.0
+pytest-timeout>=2.1.0
+coverage>=7.0.0
+hypothesis>=6.50.0
+
+# Additional useful testing tools
+pytest-cov>=4.0.0
+
+# Server dependencies for testing
+aiohttp>=3.8.0

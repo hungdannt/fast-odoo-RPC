@@ -1,0 +1,27 @@
+User-agent: *
+Allow: /
+
+# Sitemap location
+Sitemap: https://zenoo-rpc.readthedocs.io/sitemap.xml
+
+# Crawl delay (optional)
+Crawl-delay: 1
+
+# Specific rules for search engines
+User-agent: Googlebot
+Allow: /
+
+User-agent: Bingbot
+Allow: /
+
+User-agent: Slurp
+Allow: /
+
+# Block access to certain paths if needed
+# Disallow: /private/
+# Disallow: /temp/
+
+# Allow access to CSS and JS files
+Allow: /stylesheets/
+Allow: /javascripts/
+Allow: /assets/

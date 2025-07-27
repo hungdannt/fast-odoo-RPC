@@ -1,0 +1,14 @@
+blank_issues_enabled: false
+contact_links:
+  - name: 📚 Documentation
+    url: https://zenoo-rpc.readthedocs.io
+    about: Check the documentation for usage guides and API reference
+  - name: 💬 GitHub Discussions
+    url: https://github.com/tuanle96/zenoo-rpc/discussions
+    about: Ask questions and discuss ideas with the community
+  - name: 🔍 Search Existing Issues
+    url: https://github.com/tuanle96/zenoo-rpc/issues?q=is%3Aissue
+    about: Search existing issues before creating a new one
+  - name: 📖 Migration Guide
+    url: https://zenoo-rpc.readthedocs.io/en/latest/getting-started/migration/
+    about: Guide for migrating from odoorpc to Zenoo RPC
