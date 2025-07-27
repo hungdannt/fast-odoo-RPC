@@ -26,27 +26,37 @@ async def basic_transaction_example():
     async with ZenooClient("localhost", port=8069) as client:
         await client.login("demo", "admin", "admin")
         
+        # Setup transaction manager first
+        from zenoo_rpc.transaction.manager import TransactionManager
+        transaction_manager = TransactionManager(client)
+
         # Basic transaction with automatic commit/rollback
-        async with client.transaction() as tx:
+        async with transaction_manager.transaction() as tx:
             # Create a company
-            company = await client.model(ResPartner).create({
-                "name": "Acme Corporation",
-                "is_company": True,
-                "email": "contact@acme.com"
-            })
-            
+            company_id = await client.create(
+                "res.partner",
+                {
+                    "name": "Acme Corporation",
+                    "is_company": True,
+                    "email": "contact@acme.com"
+                }
+            )
+
             # Create a contact for the company
-            contact = await client.model(ResPartner).create({
-                "name": "John Doe",
-                "parent_id": company.id,
-                "email": "john@acme.com",
-                "function": "CEO"
-            })
-            
+            contact_id = await client.create(
+                "res.partner",
+                {
+                    "name": "John Doe",
+                    "parent_id": company_id,
+                    "email": "john@acme.com",
+                    "function": "CEO"
+                }
+            )
+
             # Both records are created atomically
             # Automatic commit on successful exit
-            print(f"Created company: {company.name}")
-            print(f"Created contact: {contact.name}")
+            print(f"Created company ID: {company_id}")
+            print(f"Created contact ID: {contact_id}")
 
 asyncio.run(basic_transaction_example())
 ```

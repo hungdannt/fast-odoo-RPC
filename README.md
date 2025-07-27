@@ -4,8 +4,9 @@
 
 **A zen-like, modern async Python library for Odoo RPC with type safety and superior Developer Experience (DX)**
 
-[![Python 3.9+](https://img.shields.io/badge/python-3.9+-blue.svg)](https://www.python.org/downloads/)
+[![Python 3.8+](https://img.shields.io/badge/python-3.8+-blue.svg)](https://www.python.org/downloads/)
 [![PyPI version](https://img.shields.io/pypi/v/zenoo-rpc.svg)](https://pypi.org/project/zenoo-rpc/)
+[![Python versions](https://img.shields.io/pypi/pyversions/zenoo-rpc.svg)](https://pypi.org/project/zenoo-rpc/)
 [![License: MIT](https://img.shields.io/badge/License-MIT-yellow.svg)](https://opensource.org/licenses/MIT)
 [![CI](https://github.com/tuanle96/zenoo-rpc/workflows/CI/badge.svg)](https://github.com/tuanle96/zenoo-rpc/actions/workflows/ci.yml)
 [![Coverage](https://codecov.io/gh/tuanle96/zenoo-rpc/branch/main/graph/badge.svg)](https://codecov.io/gh/tuanle96/zenoo-rpc)
@@ -33,7 +34,7 @@ Zenoo RPC is a next-generation Python library designed to replace `odoorpc` with
 - **🛡️ Type Safety**: Full Pydantic integration with IDE support and runtime validation
 - **🎯 Fluent API**: Intuitive, chainable query builder that feels natural
 - **⚡ Performance**: Intelligent caching, batch operations, and optimized RPC calls
-- **🔧 Modern Python**: Leverages Python 3.9+ features with proper type hints
+- **🔧 Modern Python**: Leverages Python 3.8+ features with proper type hints
 - **📦 Clean Architecture**: Well-structured, testable, and maintainable codebase
 - **🔄 Transaction Support**: ACID-compliant transactions with rollback capabilities
 - **🚀 Batch Operations**: Efficient bulk operations for high-performance scenarios
@@ -234,8 +235,8 @@ Zenoo RPC is being used in production environments, but we recommend:
 
 ### Compatibility
 
-- **Python**: 3.9, 3.10, 3.11, 3.12
-- **Odoo**: 13.0, 14.0, 15.0, 16.0, 17.0+
+- **Python**: 3.8, 3.9, 3.10, 3.11, 3.12
+- **Odoo**: 18.0 (tested) - other versions compatibility not yet verified
 - **Operating Systems**: Linux, macOS, Windows
 
 ## 🤝 Contributing
@@ -300,7 +301,13 @@ Please read our [Contributing Guide](CONTRIBUTING.md) for detailed information a
 
 - 💬 **[GitHub Discussions](https://github.com/tuanle96/zenoo-rpc/discussions)**: Ask questions and get help
 - 📚 **[Documentation](https://zenoo-rpc.readthedocs.io)**: Comprehensive guides and examples
-- 🐛 **[Issues](https://github.com/tuanle96/zenoo-rpc/issues)**: Report bugs or request featuresbash
+- 🐛 **[Issues](https://github.com/tuanle96/zenoo-rpc/issues)**: Report bugs or request features
+
+## 🛠️ Development
+
+Want to contribute? Here's how to set up your development environment:
+
+```bash
 # Clone the repository
 git clone https://github.com/tuanle96/zenoo-rpc.git
 cd zenoo-rpc

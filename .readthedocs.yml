@@ -1,0 +1,31 @@
+# Read the Docs configuration file for Zenoo RPC
+# See https://docs.readthedocs.io/en/stable/config-file/v2.html for details
+
+version: 2
+
+# Set the OS, Python version and other tools you might need
+build:
+  os: ubuntu-22.04
+  tools:
+    python: "3.11"
+  jobs:
+    post_create_environment:
+      # Install uv for fast Python package management
+      - curl -LsSf https://astral.sh/uv/install.sh | sh
+      - export PATH="$HOME/.local/bin:$PATH"
+    post_install:
+      # Install project dependencies with uv
+      - export PATH="$HOME/.local/bin:$PATH"
+      - uv pip install -e .
+
+# Build documentation in the "docs/" directory with MkDocs
+mkdocs:
+  configuration: mkdocs.yml
+  fail_on_warning: false
+
+# Python requirements for building documentation
+python:
+  install:
+    - method: pip
+      path: .
+    - requirements: docs/requirements.txt

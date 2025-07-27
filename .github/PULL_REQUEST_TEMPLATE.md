@@ -1,131 +1,176 @@
-# Pull Request
-
-## 📋 Description
+## Description
 
 Brief description of the changes in this PR.
 
-**Related Issue(s):**
+## Type of Change
+
+- [ ] Bug fix (non-breaking change which fixes an issue)
+- [ ] New feature (non-breaking change which adds functionality)
+- [ ] Breaking change (fix or feature that would cause existing functionality to not work as expected)
+- [ ] Documentation update
+- [ ] Performance improvement
+- [ ] Code refactoring
+- [ ] Test improvements
+- [ ] CI/CD improvements
+
+## Related Issues
+
 - Fixes #(issue number)
-- Closes #(issue number)
 - Related to #(issue number)
+- Part of #(issue number)
 
-## 🔄 Type of Change
+## Changes Made
 
-Please delete options that are not relevant.
+Detailed description of the changes:
 
-- [ ] 🐛 Bug fix (non-breaking change which fixes an issue)
-- [ ] ✨ New feature (non-breaking change which adds functionality)
-- [ ] 💥 Breaking change (fix or feature that would cause existing functionality to not work as expected)
-- [ ] 📚 Documentation update
-- [ ] 🧹 Code cleanup/refactoring
-- [ ] ⚡ Performance improvement
-- [ ] 🔧 Build/CI changes
-- [ ] 🧪 Test improvements
+### Added
+- New feature X
+- New method Y
+- New documentation Z
 
-## 🧪 Testing
+### Changed
+- Modified behavior of X
+- Updated Y to improve Z
+- Refactored A for better B
 
-**Test Coverage:**
-- [ ] I have added tests that prove my fix is effective or that my feature works
-- [ ] New and existing unit tests pass locally with my changes
-- [ ] I have added integration tests if applicable
+### Removed
+- Deprecated method X
+- Unused code Y
+- Outdated documentation Z
 
-**Manual Testing:**
-Describe the tests that you ran to verify your changes:
+### Fixed
+- Bug in X that caused Y
+- Memory leak in Z
+- Race condition in A
+
+## Code Examples
+
+If applicable, provide examples of the new functionality:
 
 ```python
-# Example test code or steps
-async def test_new_feature():
-    # Test implementation
-    pass
+# Before (if applicable)
+old_result = await client.old_method()
+
+# After
+new_result = await client.new_method()
 ```
 
-**Test Environment:**
-- Python Version: [e.g. 3.11]
-- Operating System: [e.g. Ubuntu 22.04]
-- Odoo Version: [e.g. 16.0] (if applicable)
+## Testing
 
-## 📝 Changes Made
+### Test Coverage
+- [ ] Unit tests added/updated
+- [ ] Integration tests added/updated
+- [ ] Performance tests added/updated
+- [ ] Documentation tests added/updated
 
-**Code Changes:**
-- [ ] Added new functionality
-- [ ] Modified existing functionality
-- [ ] Removed deprecated functionality
-- [ ] Updated dependencies
+### Test Results
+```bash
+# Paste test results here
+pytest tests/ -v
+# ========================= test session starts =========================
+# collected X items
+# tests/test_example.py::test_new_feature PASSED
+# ========================= X passed in Y.YYs =========================
+```
 
-**Documentation Changes:**
-- [ ] Updated docstrings
-- [ ] Updated README.md
-- [ ] Updated documentation in docs/
-- [ ] Added examples
+### Manual Testing
+Describe any manual testing performed:
 
-**Breaking Changes:**
-If this is a breaking change, describe what breaks and how users should migrate:
+1. Tested with Odoo 18.0 (currently supported version)
+2. Verified performance improvements
+3. Checked backward compatibility
 
-## 🔍 Code Quality
+## Documentation
 
-**Pre-commit Checks:**
-- [ ] Code is formatted with Black
-- [ ] Code passes Ruff linting
-- [ ] Type hints are added and mypy passes
-- [ ] All tests pass
-- [ ] Documentation builds successfully
+- [ ] Code is self-documenting with clear variable names and comments
+- [ ] Docstrings added/updated for new/modified functions
+- [ ] Type hints added/updated
+- [ ] Documentation updated (if applicable)
+- [ ] Examples updated (if applicable)
+- [ ] Changelog updated
 
-**Performance Impact:**
+## Performance Impact
+
 - [ ] No performance impact
-- [ ] Performance improvement
-- [ ] Potential performance regression (explain below)
+- [ ] Performance improvement (describe below)
+- [ ] Potential performance regression (describe below and justify)
 
-Performance notes:
+**Performance Details:**
+<!-- Describe performance impact, include benchmarks if applicable -->
 
-## 📚 Documentation
+## Breaking Changes
 
-**Documentation Updates:**
-- [ ] Docstrings updated for new/modified functions
-- [ ] README.md updated if needed
-- [ ] Documentation in docs/ updated if needed
-- [ ] Examples updated if needed
-- [ ] CHANGELOG.md updated (for maintainers)
+- [ ] No breaking changes
+- [ ] Breaking changes (describe below)
 
-## 🔒 Security
+**Breaking Change Details:**
+<!-- Describe breaking changes and migration path -->
 
-**Security Considerations:**
+## Backward Compatibility
+
+- [ ] Fully backward compatible
+- [ ] Backward compatible with deprecation warnings
+- [ ] Not backward compatible (breaking change)
+
+## Security Considerations
+
 - [ ] No security implications
 - [ ] Security improvement
-- [ ] Potential security impact (explain below)
+- [ ] Potential security impact (describe below)
 
-Security notes:
+**Security Details:**
+<!-- Describe security implications -->
 
-## 🚀 Deployment
+## Checklist
 
-**Deployment Considerations:**
-- [ ] No deployment changes needed
-- [ ] Requires environment variable changes
-- [ ] Requires dependency updates
-- [ ] Requires database migrations (if applicable)
+### Code Quality
+- [ ] Code follows the project's coding standards
+- [ ] Code is properly formatted (black, isort)
+- [ ] Code passes linting (flake8, mypy)
+- [ ] No unnecessary debug prints or comments
+- [ ] Error handling is appropriate
 
-## ✅ Checklist
+### Testing
+- [ ] All tests pass locally
+- [ ] New tests cover the changes
+- [ ] Test coverage is maintained or improved
+- [ ] Integration tests pass (if applicable)
 
-**Before submitting this PR, please make sure:**
+### Documentation
+- [ ] Code is well-documented
+- [ ] Public APIs have docstrings
+- [ ] Type hints are complete
+- [ ] Documentation builds without errors
 
-- [ ] I have read the [CONTRIBUTING.md](../CONTRIBUTING.md) guidelines
-- [ ] My code follows the project's coding standards
-- [ ] I have performed a self-review of my own code
-- [ ] I have commented my code, particularly in hard-to-understand areas
-- [ ] I have made corresponding changes to the documentation
-- [ ] My changes generate no new warnings
-- [ ] I have added tests that prove my fix is effective or that my feature works
-- [ ] New and existing unit tests pass locally with my changes
-- [ ] Any dependent changes have been merged and published
+### Review
+- [ ] Self-review completed
+- [ ] Ready for review
+- [ ] Addressed all review comments (if re-submitting)
 
-**For Maintainers:**
-- [ ] Version bump needed
-- [ ] Release notes needed
-- [ ] Migration guide needed
+## Additional Notes
 
-## 📸 Screenshots (if applicable)
+Any additional information that reviewers should know:
 
-Add screenshots to help explain your changes.
+## Screenshots (if applicable)
 
-## 🤔 Additional Notes
+<!-- Add screenshots for UI changes -->
 
-Add any additional notes, concerns, or questions for reviewers.
+## Deployment Notes
+
+<!-- Any special deployment considerations -->
+
+---
+
+**For Reviewers:**
+
+### Review Checklist
+- [ ] Code quality and style
+- [ ] Test coverage and quality
+- [ ] Documentation completeness
+- [ ] Performance impact
+- [ ] Security implications
+- [ ] Backward compatibility
+- [ ] API design (if applicable)
+
+### Review Comments
+<!-- Reviewers: Add your comments here -->

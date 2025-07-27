@@ -2,7 +2,9 @@
 
 **A zen-like, modern async Python library for Odoo RPC with type safety and superior Developer Experience (DX)**
 
-[![Python 3.9+](https://img.shields.io/badge/python-3.9+-blue.svg)](https://www.python.org/downloads/)
+[![Python 3.8+](https://img.shields.io/badge/python-3.8+-blue.svg)](https://www.python.org/downloads/)
+[![PyPI version](https://img.shields.io/pypi/v/zenoo-rpc.svg)](https://pypi.org/project/zenoo-rpc/)
+[![Python versions](https://img.shields.io/pypi/pyversions/zenoo-rpc.svg)](https://pypi.org/project/zenoo-rpc/)
 [![License: MIT](https://img.shields.io/badge/License-MIT-yellow.svg)](https://opensource.org/licenses/MIT)
 [![Code style: black](https://img.shields.io/badge/code%20style-black-000000.svg)](https://github.com/psf/black)
 
@@ -16,7 +18,7 @@ Zenoo RPC is a next-generation Python library designed to replace `odoorpc` with
 - **🛡️ Type Safety**: Full Pydantic integration with IDE support and runtime validation
 - **🎯 Fluent API**: Intuitive, chainable query builder that feels natural
 - **⚡ Performance**: Intelligent caching, batch operations, and optimized RPC calls
-- **🔧 Modern Python**: Leverages Python 3.9+ features with proper type hints
+- **🔧 Modern Python**: Leverages Python 3.8+ features with proper type hints
 - **📦 Clean Architecture**: Well-structured, testable, and maintainable codebase
 - **🔄 Transaction Support**: ACID-compliant transactions with rollback capabilities
 - **🚀 Batch Operations**: Efficient bulk operations for high-performance scenarios

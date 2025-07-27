@@ -22,6 +22,7 @@ Best for development and single-instance deployments:
 ```python
 import asyncio
 from zenoo_rpc import ZenooClient
+from zenoo_rpc.models.common import ResPartner
 
 async def setup_memory_cache():
     async with ZenooClient("localhost", port=8069) as client:
@@ -30,17 +31,18 @@ async def setup_memory_cache():
             name="memory",           # Cache name
             max_size=1000,          # Maximum number of items
             default_ttl=300,        # Default TTL in seconds (5 minutes)
-            strategy="lru"          # Eviction strategy: "lru" or "fifo"
+            strategy="ttl"          # Cache strategy: "ttl", "lru", "lfu"
         )
-        
+
         await client.login("demo", "admin", "admin")
-        
+
         # Queries are automatically cached
-        partners = await client.model(ResPartner).filter(
+        partner_builder = client.model(ResPartner)
+        partners = await partner_builder.filter(
             is_company=True
         ).all()  # First call - hits database
-        
-        partners = await client.model(ResPartner).filter(
+
+        partners = await partner_builder.filter(
             is_company=True
         ).all()  # Second call - served from cache
 
@@ -57,17 +59,21 @@ async def setup_redis_cache():
         # Setup Redis cache
         await client.cache_manager.setup_redis_cache(
             name="redis",
-            redis_url="redis://localhost:6379/0",
-            default_ttl=600,        # 10 minutes
-            key_prefix="zenoo:",    # Namespace for keys
-            serializer="pickle",    # "pickle" or "json"
-            max_connections=10      # Redis connection pool size
+            url="redis://localhost:6379/0",
+            namespace="zenoo_rpc",
+            serializer="json",      # "json", "pickle", "msgpack"
+            strategy="ttl",
+            max_connections=10,
+            enable_fallback=True,   # Fallback to memory cache if Redis fails
+            circuit_breaker_threshold=5,
+            retry_attempts=3
         )
-        
+
         await client.login("demo", "admin", "admin")
-        
+
         # Cached across multiple application instances
-        data = await client.model(ResPartner).all()
+        partner_builder = client.model(ResPartner)
+        data = await partner_builder.all()
 
 asyncio.run(setup_redis_cache())
 ```

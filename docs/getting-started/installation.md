@@ -4,8 +4,9 @@ This guide will help you install Zenoo RPC and its dependencies for different us
 
 ## Requirements
 
-- **Python 3.9+** (Python 3.11+ recommended for best performance)
-- **Odoo 12.0+** (tested with Odoo 12, 13, 14, 15, 16, 17)
+- **Python 3.8+** (Python 3.11+ recommended for best performance)
+- **Odoo 18.0** (currently tested version)
+- **Other Odoo versions** (12.0-17.0) - compatibility not yet verified
 
 ## Basic Installation
 

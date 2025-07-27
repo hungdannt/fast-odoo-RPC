@@ -1,0 +1,71 @@
+# Include essential project files
+include README.md
+include CHANGELOG.md
+include CODE_OF_CONDUCT.md
+include SECURITY.md
+include CONTRIBUTING.md
+include pyproject.toml
+include Makefile
+
+# Include documentation
+recursive-include docs *.md *.yml *.yaml *.css *.js *.png *.jpg *.gif *.ico
+include mkdocs.yml
+
+# Include examples
+recursive-include examples *.py
+
+# Include deployment configs
+recursive-include deployment *.yml *.yaml *.dockerfile *.sh *.py
+
+# Include scripts
+recursive-include scripts *.py *.sh
+
+# Include GitHub templates
+recursive-include .github *.md *.yml *.yaml
+
+# Include source code
+recursive-include src *.py *.pyi
+
+# Include tests (for development installs)
+recursive-include tests *.py
+
+# Exclude unnecessary files
+exclude *.pyc
+exclude *.pyo
+exclude *.pyd
+exclude __pycache__
+exclude .coverage
+exclude .pytest_cache
+exclude htmlcov
+exclude .DS_Store
+exclude Thumbs.db
+exclude *.tmp
+exclude *.temp
+exclude *.log
+exclude debug_*.py
+exclude demo.py
+exclude *_test.py
+exclude phase*.py
+
+# Exclude development artifacts
+exclude dev-requirements.txt
+exclude docker-compose.test.yml
+exclude .env*
+exclude .secrets*
+exclude coverage.json
+exclude .benchmarks
+exclude temp/
+exclude tmp/
+exclude *.bak
+exclude *.backup
+
+# Global excludes
+global-exclude *.pyc
+global-exclude *.pyo
+global-exclude *.pyd
+global-exclude __pycache__
+global-exclude .DS_Store
+global-exclude Thumbs.db
+global-exclude *.tmp
+global-exclude *.temp
+global-exclude *~

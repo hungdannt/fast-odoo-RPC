@@ -1,13 +1,13 @@
 [build-system]
-requires = ["hatchling>=1.21.0"]
-build-backend = "hatchling.build"
+requires = ["setuptools>=61.0", "wheel"]
+build-backend = "setuptools.build_meta"
 
 [project]
 name = "zenoo-rpc"
-version = "0.3.0"
+version = "0.1.0"
 description = "A zen-like, modern async Python library for Odoo RPC with type safety, transactions, caching, and superior DX"
 readme = "README.md"
-license = {file = "LICENSE"}
+
 authors = [
     {name = "Lê Anh Tuấn", email = "justin.le.1105@gmail.com"}
 ]
@@ -16,6 +16,7 @@ classifiers = [
     "Intended Audience :: Developers",
     "License :: OSI Approved :: MIT License",
     "Programming Language :: Python :: 3",
+    "Programming Language :: Python :: 3.8",
     "Programming Language :: Python :: 3.9",
     "Programming Language :: Python :: 3.10",
     "Programming Language :: Python :: 3.11",
@@ -24,7 +25,7 @@ classifiers = [
     "Topic :: Software Development :: Libraries :: Python Modules",
     "Topic :: Office/Business :: Financial :: Accounting",
 ]
-requires-python = ">=3.9"
+requires-python = ">=3.8"
 dependencies = [
     "httpx>=0.25.0",
     "pydantic>=2.0.0",
@@ -61,11 +62,11 @@ packages = ["src/zenoo_rpc"]
 
 [tool.black]
 line-length = 88
-target-version = ['py39']
+target-version = ['py38']
 include = '\.pyi?$'
 
 [tool.ruff]
-target-version = "py39"
+target-version = "py38"
 line-length = 88
 select = [
     "E",  # pycodestyle errors
@@ -78,7 +79,7 @@ select = [
 ]
 
 [tool.mypy]
-python_version = "3.9"
+python_version = "3.8"
 strict = true
 warn_return_any = true
 warn_unused_configs = true

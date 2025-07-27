@@ -18,12 +18,12 @@ repo_name: tuanle96/zenoo-rpc
 repo_url: https://github.com/tuanle96/zenoo-rpc
 edit_uri: edit/main/docs/
 
-copyright: Copyright &copy; 2024 Lê Anh Tuấn
+copyright: Copyright &copy; 2025 Lê Anh Tuấn
 
 theme:
   name: material
   language: en
-  custom_dir: docs/overrides
+  # custom_dir: docs/overrides  # Disabled for ReadTheDocs
   palette:
   # Palette toggle for light mode
   - scheme: default

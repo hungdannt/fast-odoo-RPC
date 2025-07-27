@@ -1,0 +1,51 @@
+[tool.poetry]
+name = "zenoo-rpc"
+version = "0.1.0"
+description = "A zen-like, modern async Python library for Odoo RPC with type safety, transactions, caching, and superior DX"
+authors = ["Lê Anh Tuấn <justin.le.1105@gmail.com>"]
+readme = "README.md"
+license = "MIT"
+homepage = "https://github.com/tuanle96/zenoo-rpc"
+repository = "https://github.com/tuanle96/zenoo-rpc"
+documentation = "https://zenoo-rpc.readthedocs.io"
+keywords = ["odoo", "rpc", "async", "python", "erp", "api", "client"]
+classifiers = [
+    "Development Status :: 3 - Alpha",
+    "Intended Audience :: Developers",
+    "License :: OSI Approved :: MIT License",
+    "Programming Language :: Python :: 3",
+    "Programming Language :: Python :: 3.8",
+    "Programming Language :: Python :: 3.9",
+    "Programming Language :: Python :: 3.10",
+    "Programming Language :: Python :: 3.11",
+    "Programming Language :: Python :: 3.12",
+    "Framework :: AsyncIO",
+    "Topic :: Software Development :: Libraries :: Python Modules",
+    "Topic :: Office/Business :: Financial :: Accounting",
+]
+packages = [{include = "zenoo_rpc", from = "src"}]
+
+[tool.poetry.dependencies]
+python = "^3.8"
+httpx = "^0.25.0"
+pydantic = "^2.0.0"
+typing-extensions = "^4.0.0"
+
+[tool.poetry.group.dev.dependencies]
+pytest = "^7.0.0"
+pytest-asyncio = "^0.21.0"
+pytest-cov = "^4.0.0"
+black = "^23.0.0"
+ruff = "^0.1.0"
+
+[tool.poetry.group.docs.dependencies]
+mkdocs = "^1.5.0"
+mkdocs-material = "^9.0.0"
+mkdocstrings = {extras = ["python"], version = "^0.23.0"}
+
+[tool.poetry.extras]
+redis = ["redis"]
+
+[build-system]
+requires = ["poetry-core"]
+build-backend = "poetry.core.masonry.api"

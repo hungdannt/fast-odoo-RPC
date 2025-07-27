@@ -1,24 +1,14 @@
 ---
-name: Feature Request
-about: Suggest an idea for Zenoo RPC
+name: Feature request
+about: Suggest an idea for this project
 title: '[FEATURE] '
-labels: ['enhancement', 'needs-triage']
+labels: 'enhancement'
 assignees: ''
+
 ---
-
-## 🚀 Feature Description
-
-A clear and concise description of the feature you'd like to see implemented.
-
-## 💡 Motivation
 
 **Is your feature request related to a problem? Please describe.**
 A clear and concise description of what the problem is. Ex. I'm always frustrated when [...]
-
-**Why would this feature be valuable?**
-Explain how this feature would benefit users of Zenoo RPC.
-
-## 📝 Detailed Description
 
 **Describe the solution you'd like**
 A clear and concise description of what you want to happen.
@@ -26,72 +16,63 @@ A clear and concise description of what you want to happen.
 **Describe alternatives you've considered**
 A clear and concise description of any alternative solutions or features you've considered.
 
-## 🎯 Use Cases
-
-Provide specific use cases where this feature would be helpful:
-
-1. **Use Case 1:** Description of how this feature would be used
-2. **Use Case 2:** Another scenario where this would be valuable
-3. **Use Case 3:** Additional use case if applicable
-
-## 💻 Proposed API
-
-If you have ideas about how the API should look, provide examples:
+**Use Case**
+Describe the specific use case for this feature:
 
 ```python
-# Example of how the new feature might be used
-import asyncio
+# Example of how you would like to use this feature
 from zenoo_rpc import ZenooClient
 
-async def main():
-    async with ZenooClient("localhost") as client:
-        await client.login("db", "user", "pass")
+async def example_usage():
+    async with ZenooClient("localhost", port=8069) as client:
+        await client.login("demo", "admin", "admin")
         
-        # Your proposed API usage here
+        # Your proposed API usage
         result = await client.new_feature_method()
-        
-asyncio.run(main())
 ```
 
-## 🔗 Related Features
+**API Design (if applicable)**
+If you have ideas about the API design, please share them:
 
-**Integration with existing features:**
-- How would this feature work with existing Zenoo RPC functionality?
-- Are there any potential conflicts or dependencies?
+```python
+class ZenooClient:
+    async def proposed_method(
+        self,
+        param1: str,
+        param2: Optional[int] = None
+    ) -> List[Dict[str, Any]]:
+        """Proposed method description."""
+        pass
+```
 
-**Similar features in other libraries:**
-- Does odoorpc or other similar libraries have this feature?
-- How do they implement it?
+**Impact**
+Describe the impact this feature would have:
+- [ ] Performance improvement
+- [ ] Developer experience enhancement
+- [ ] New functionality
+- [ ] Better error handling
+- [ ] Improved compatibility
+- [ ] Other: ___________
 
-## 📋 Implementation Considerations
+**Priority**
+How important is this feature to you?
+- [ ] Critical - blocking my work
+- [ ] High - would significantly improve my workflow
+- [ ] Medium - nice to have
+- [ ] Low - minor improvement
 
-**Technical considerations:**
-- Are there any technical challenges or limitations?
-- Would this require breaking changes?
-- Performance implications?
+**Additional context**
+Add any other context, screenshots, or examples about the feature request here.
 
-**Backward compatibility:**
-- Would this feature maintain backward compatibility?
-- If not, how could migration be handled?
+**Related Issues**
+Link any related issues or discussions:
+- Related to #
+- Depends on #
+- Blocks #
 
-## 🎨 Additional Context
-
-Add any other context, mockups, or examples about the feature request here.
-
-**Priority Level:**
-- [ ] Low - Nice to have
-- [ ] Medium - Would improve workflow significantly
-- [ ] High - Critical for my use case
-
-**Contribution:**
-- [ ] I would be willing to implement this feature
-- [ ] I would be willing to help with testing
-- [ ] I would be willing to help with documentation
-
-## ✅ Checklist
-
+**Checklist**
 - [ ] I have searched existing issues to ensure this is not a duplicate
-- [ ] I have provided clear use cases for this feature
-- [ ] I have considered backward compatibility implications
-- [ ] I have provided examples of how the API might look
-- [ ] I have explained why this feature would be valuable
+- [ ] I have provided a clear use case for this feature
+- [ ] I have considered alternative solutions
+- [ ] I have described the expected API (if applicable)
+- [ ] I have indicated the priority and impact
