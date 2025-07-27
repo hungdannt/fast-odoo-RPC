@@ -380,7 +380,8 @@ class EnhancedConnectionPool:
     async def _close_connection(self, connection: PooledConnection) -> None:
         """Close a connection and remove from pool."""
         try:
-            await connection.client.aclose()
+            # Add timeout to prevent hanging on close
+            await asyncio.wait_for(connection.client.aclose(), timeout=5.0)
             connection.state = ConnectionState.CLOSED
 
             if connection in self.connections:
@@ -389,8 +390,18 @@ class EnhancedConnectionPool:
             self.stats["connections_closed"] += 1
             logger.debug(f"Closed connection (remaining: {len(self.connections)})")
 
+        except asyncio.TimeoutError:
+            logger.warning(f"Connection close timed out, forcing closure")
+            connection.state = ConnectionState.CLOSED
+            if connection in self.connections:
+                self.connections.remove(connection)
+            self.stats["connections_closed"] += 1
         except Exception as e:
             logger.error(f"Error closing connection: {e}")
+            # Still mark as closed and remove from pool
+            connection.state = ConnectionState.CLOSED
+            if connection in self.connections:
+                self.connections.remove(connection)
 
     async def _health_check_loop(self) -> None:
         """Background task for connection health checks."""
@@ -410,9 +421,12 @@ class EnhancedConnectionPool:
         for connection in self.connections:
             if connection.should_health_check(self.health_check_interval):
                 try:
-                    # Simple health check - ping the server
+                    # Simple health check - ping the server with timeout
                     start_time = time.time()
-                    response = await connection.client.get("/web/database/selector")
+                    response = await asyncio.wait_for(
+                        connection.client.get("/web/database/selector"),
+                        timeout=5.0
+                    )
                     response_time = time.time() - start_time
 
                     if response.status_code < 500:
@@ -425,6 +439,10 @@ class EnhancedConnectionPool:
 
                     self.stats["health_checks"] += 1
 
+                except asyncio.TimeoutError:
+                    logger.warning("Health check timed out for connection")
+                    connection.mark_unhealthy()
+                    unhealthy_connections.append(connection)
                 except Exception as e:
                     logger.warning(f"Health check failed for connection: {e}")
                     connection.mark_unhealthy()

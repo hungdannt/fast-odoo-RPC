@@ -224,8 +224,8 @@ class TestPoolShutdown:
         """Test shutdown with connections waiting in queue."""
         await pool.initialize()
 
-        # Fill the available queue
-        while not pool.available_connections.full():
+        # Fill the available queue (add a reasonable number since queue is unbounded)
+        for _ in range(10):  # Add 10 connections to queue
             conn = PooledConnection(client=AsyncMock())
             await pool.available_connections.put(conn)
 

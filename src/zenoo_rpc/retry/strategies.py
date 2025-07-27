@@ -259,7 +259,7 @@ class ExponentialBackoffStrategy(RetryStrategy):
         delay = self.base_delay * (self.multiplier ** (attempt - 1))
 
         # Prevent overflow for very large attempts
-        return min(delay, self.max_delay * 10)
+        return min(delay, self.max_delay)
 
 
 class LinearBackoffStrategy(RetryStrategy):
@@ -434,10 +434,15 @@ class AdaptiveStrategy(RetryStrategy):
             Dictionary with current statistics
         """
         with self._lock:
+            # Calculate success rate directly to avoid deadlock
+            if self._total_attempts == 0:
+                success_rate = 1.0
+            else:
+                success_rate = self._successful_attempts / self._total_attempts
             return {
                 "total_attempts": self._total_attempts,
                 "successful_attempts": self._successful_attempts,
-                "success_rate": self.get_success_rate(),
+                "success_rate": success_rate,
                 "window_size": len(self._attempts_history),
                 "adaptation_active": self._total_attempts >= self.min_samples
             }

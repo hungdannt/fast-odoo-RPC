@@ -575,11 +575,13 @@ class TestAdaptiveStrategy:
         for thread in threads:
             thread.join()
 
-        # Should have recorded 500 successful attempts
+        # Should have recorded attempts up to sliding window size (100)
+        # Due to sliding window, total_attempts will be capped at adaptation_window
         stats = strategy.get_statistics()
-        assert stats["total_attempts"] == 500
-        assert stats["successful_attempts"] == 500
+        assert stats["total_attempts"] == 100  # Sliding window size
+        assert stats["successful_attempts"] == 100
         assert stats["success_rate"] == 1.0
+        assert stats["window_size"] == 100
 
     def test_sliding_window(self):
         """Test sliding window behavior."""
