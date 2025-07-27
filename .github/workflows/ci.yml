@@ -64,14 +64,12 @@ jobs:
       run: |
         pytest tests/ --cov=src/zenoo_rpc --cov-report=xml --cov-report=term-missing --ignore=tests/performance/test_zenoo_vs_odoorpc_benchmark.py --tb=short
 
-    - name: Upload coverage to Codecov
+    - name: Upload coverage reports to Codecov
       if: matrix.os == 'ubuntu-latest' && matrix.python-version == '3.11'
-      uses: codecov/codecov-action@v3
+      uses: codecov/codecov-action@v5
       with:
-        file: ./coverage.xml
-        flags: unittests
-        name: codecov-umbrella
         token: ${{ secrets.CODECOV_TOKEN }}
+        slug: tuanle96/zenoo-rpc
 
   security:
     runs-on: ubuntu-latest
