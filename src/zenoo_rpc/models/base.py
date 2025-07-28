@@ -7,7 +7,7 @@ using Pydantic models with ORM-like capabilities.
 
 from typing import Any, Dict, List, Optional, Type, TypeVar, Union, ClassVar
 from datetime import date, datetime
-from pydantic import BaseModel, Field, ConfigDict, model_validator
+from pydantic import BaseModel, Field, ConfigDict, model_validator, field_validator
 from pydantic.fields import FieldInfo
 
 from .relationships import LazyRelationship, RelationshipManager
@@ -130,6 +130,44 @@ class OdooModel(BaseModel, metaclass=OdooModelMeta):
     relationship_manager: Optional[RelationshipManager] = Field(
         default=None, exclude=True, repr=False
     )
+
+    @model_validator(mode='before')
+    @classmethod
+    def convert_odoo_values(cls, data: Any) -> Any:
+        """Convert Odoo's False values to None for optional fields."""
+        if not isinstance(data, dict):
+            return data
+
+        # Get field annotations to determine which fields are optional strings
+        annotations = getattr(cls, '__annotations__', {})
+
+        converted_data = {}
+        for key, value in data.items():
+            # Skip special keys
+            if key in ('client', 'self'):
+                if key == 'client':
+                    converted_data[key] = value
+                continue
+
+            # Convert Odoo's False to None for optional string fields
+            if value is False and key in annotations:
+                field_type = annotations[key]
+                # Check if it's Optional[str] or similar
+                if hasattr(field_type, '__origin__') and field_type.__origin__ is Union:
+                    args = field_type.__args__
+                    if len(args) == 2 and type(None) in args and str in args:
+                        converted_data[key] = None
+                        continue
+
+            # Handle Many2One fields that return [id, name] tuples
+            if isinstance(value, list) and len(value) == 2 and isinstance(value[0], int):
+                # This is likely a Many2One field, just take the ID
+                converted_data[key] = value[0]
+                continue
+
+            converted_data[key] = value
+
+        return converted_data
 
     def __init__(self, **data: Any):
         """Initialize the model with data from Odoo."""
@@ -278,17 +316,94 @@ class OdooModel(BaseModel, metaclass=OdooModelMeta):
         # For now, it's a placeholder
         pass
 
-    def save(self) -> None:
+    async def update(self, **values: Any) -> None:
+        """Update the record with new field values.
+
+        Args:
+            **values: Field values to update
+
+        Raises:
+            ValueError: If no client is available or record has no ID
+            ValidationError: If update fails due to validation
+            AccessError: If user lacks write permissions
+        """
+        if not self.client:
+            raise ValueError("No client available for updating")
+
+        if not hasattr(self, 'id') or not self.id:
+            raise ValueError("Cannot update record without ID")
+
+        # Update the record on server
+        await self.client.write(
+            self.get_odoo_name(),
+            [self.id],
+            values
+        )
+
+        # Update local instance with new values
+        for field, value in values.items():
+            if hasattr(self, field):
+                setattr(self, field, value)
+                self.loaded_fields.add(field)
+
+    async def delete(self) -> None:
+        """Delete the record from the server.
+
+        Raises:
+            ValueError: If no client is available or record has no ID
+            AccessError: If user lacks delete permissions
+            ValidationError: If deletion fails due to constraints
+        """
+        if not self.client:
+            raise ValueError("No client available for deletion")
+
+        if not hasattr(self, 'id') or not self.id:
+            raise ValueError("Cannot delete record without ID")
+
+        # Delete the record from server
+        await self.client.unlink(
+            self.get_odoo_name(),
+            [self.id]
+        )
+
+        # Mark the record as deleted (don't set to None due to Pydantic validation)
+        # Instead, we could use a special marker or just leave the ID
+        # The record is deleted on server, local instance keeps ID for reference
+
+    async def save(self) -> None:
         """Save changes to the server.
 
         This method will save any modified fields back to the Odoo server.
+        For new records (without ID), this will create them.
+        For existing records, this will update them.
         """
         if not self.client:
             raise ValueError("Cannot save record without client connection")
 
-        # This will be implemented when we have the query builder
-        # For now, it's a placeholder
-        pass
+        if hasattr(self, 'id') and self.id:
+            # Update existing record
+            # Get only modified fields (this is a simplified approach)
+            modified_data = self.to_odoo_dict(exclude_unset=True)
+            if 'id' in modified_data:
+                modified_data.pop('id')  # Don't include ID in update
+
+            if modified_data:  # Only update if there are changes
+                await self.client.write(
+                    self.get_odoo_name(),
+                    [self.id],
+                    modified_data
+                )
+        else:
+            # Create new record
+            create_data = self.to_odoo_dict(exclude_unset=True)
+            if 'id' in create_data:
+                create_data.pop('id')  # Don't include ID in create
+
+            record_id = await self.client.create(
+                self.get_odoo_name(),
+                create_data
+            )
+            self.id = record_id
 
     def __repr__(self) -> str:
         """String representation of the model."""

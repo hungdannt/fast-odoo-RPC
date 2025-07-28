@@ -59,9 +59,12 @@ partner_ids = Partner.search([('is_company', '=', True)], limit=10)
 partners = Partner.browse(partner_ids)  # Second RPC call!
 
 # Zenoo RPC (modern way)
-partners = await client.model(ResPartner).filter(
-    is_company=True
-).limit(10).all()  # Single RPC call with type safety!
+async with ZenooClient("localhost", port=8069) as client:
+    await client.login("demo", "admin", "admin")
+
+    partners = await client.model(ResPartner).filter(
+        is_company=True
+    ).limit(10).all()  # Single RPC call with type safety!
 ```
 
 ## 📦 Installation
@@ -158,46 +161,55 @@ children = await partner.child_ids.all()  # Lazy collection
 ### Intelligent Caching
 
 ```python
-# Setup cache manager
-await client.setup_cache_manager(backend="redis", url="redis://localhost:6379/0")
+async with ZenooClient("localhost", port=8069) as client:
+    await client.login("demo", "admin", "admin")
 
-# Cached queries
-partners = await client.model(ResPartner).filter(
-    is_company=True
-).cache(ttl=300).all()  # Cached for 5 minutes
+    # Setup cache manager
+    await client.setup_cache_manager(backend="redis", url="redis://localhost:6379/0")
+
+    # Cached queries
+    partners = await client.model(ResPartner).filter(
+        is_company=True
+    ).cache(ttl=300).all()  # Cached for 5 minutes
 ```
 
 ### Batch Operations
 
 ```python
-# Setup batch manager
-await client.setup_batch_manager(max_chunk_size=100)
+async with ZenooClient("localhost", port=8069) as client:
+    await client.login("demo", "admin", "admin")
 
-# Efficient bulk operations
-async with client.batch() as batch:
-    partners_data = [
-        {"name": "Company 1", "email": "c1@example.com"},
-        {"name": "Company 2", "email": "c2@example.com"},
-    ]
-    partners = await batch.create_many(ResPartner, partners_data)
+    # Setup batch manager
+    await client.setup_batch_manager(max_chunk_size=100)
+
+    # Efficient bulk operations
+    async with client.batch() as batch:
+        partners_data = [
+            {"name": "Company 1", "email": "c1@example.com"},
+            {"name": "Company 2", "email": "c2@example.com"},
+        ]
+        partners = await batch.create_many(ResPartner, partners_data)
 ```
 
 ### Transaction Management
 
 ```python
-# Setup transaction manager
-await client.setup_transaction_manager()
+async with ZenooClient("localhost", port=8069) as client:
+    await client.login("demo", "admin", "admin")
 
-# ACID transactions with rollback
-async with client.transaction() as tx:
-    partner = await client.model(ResPartner).create({
-        "name": "Test Company",
-        "email": "test@example.com"
-    })
-    
-    # If any error occurs, transaction is automatically rolled back
-    await partner.update({"phone": "+1234567890"})
-    # Committed automatically on successful exit
+    # Setup transaction manager
+    await client.setup_transaction_manager()
+
+    # ACID transactions with rollback
+    async with client.transaction() as tx:
+        partner = await client.model(ResPartner).create({
+            "name": "Test Company",
+            "email": "test@example.com"
+        })
+
+        # If any error occurs, transaction is automatically rolled back
+        await partner.update({"phone": "+1234567890"})
+        # Committed automatically on successful exit
 ```
 
 ## 🧪 Development Status

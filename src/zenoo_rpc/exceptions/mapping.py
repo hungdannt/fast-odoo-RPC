@@ -122,7 +122,9 @@ def map_jsonrpc_error(error_data: Dict[str, Any]) -> ZenooError:
         )
 
     # Default to generic ZenooError for unknown error types
-    return ZenooError(f"Server error: {error_message}", context=context)
+    # But try to extract meaningful message from server traceback
+    enhanced_message = _extract_meaningful_error_message(error_message, error_data_dict)
+    return ZenooError(enhanced_message, context=context)
 
 
 def extract_server_traceback(error_data: Dict[str, Any]) -> str:
@@ -218,3 +220,48 @@ def _enhance_warning_message(message: str) -> str:
         "This is a business logic warning from Odoo. "
         "Please review your data and operation to resolve this issue."
     )
+
+
+def _extract_meaningful_error_message(message: str, error_data: Dict[str, Any]) -> str:
+    """Extract meaningful error message from Odoo server response.
+
+    Args:
+        message: Original error message
+        error_data: Error data dictionary from server
+
+    Returns:
+        Enhanced error message with better context
+    """
+    # If we have a debug traceback, try to extract the actual error
+    debug_info = error_data.get("debug", "")
+
+    if debug_info:
+        # Look for common error patterns in the traceback
+        lines = debug_info.split('\n')
+
+        # Find the last meaningful error line
+        for line in reversed(lines):
+            line = line.strip()
+
+            # Skip empty lines and generic traceback lines
+            if not line or line.startswith('File ') or line.startswith('  '):
+                continue
+
+            # Look for specific error patterns
+            if any(pattern in line for pattern in [
+                'ValueError:', 'UserError:', 'ValidationError:',
+                'AccessDenied:', 'IntegrityError:', 'Warning:'
+            ]):
+                # Extract the actual error message
+                if ':' in line:
+                    actual_error = line.split(':', 1)[1].strip()
+                    if actual_error and actual_error != message:
+                        return f"{actual_error}\n\nOriginal: {message}"
+
+    # Check if the message itself contains useful information
+    if message and message != "Odoo Server Error":
+        return message
+
+    # Fallback to generic message with context
+    error_type = error_data.get("name", "Unknown")
+    return f"Server error ({error_type}): {message or 'No details available'}"

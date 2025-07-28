@@ -543,7 +543,11 @@ class QuerySet(AsyncIterable[T]):
             Model instance
         """
         # Add client reference for lazy loading
-        record_data["_client"] = self.client
+        record_data["client"] = self.client
+
+        # Remove problematic 'self' key if present
+        if "self" in record_data:
+            record_data.pop("self", None)
 
         # Create the model instance
         return self.model_class(**record_data)

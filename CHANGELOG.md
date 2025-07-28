@@ -16,6 +16,41 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 ### Fixed
 - TBD for next release
 
+## [0.1.1] - 2025-07-28
+
+### Added
+- **Model Instance Methods**: Added `update()`, `delete()`, and `save()` methods to OdooModel instances
+- **Transaction Manager Setup**: Added `setup_transaction_manager()` method to ZenooClient
+- **Batch Manager Setup**: Added `setup_batch_manager()` method to ZenooClient
+- **Context Managers**: Added `client.transaction()` and `client.batch()` context managers
+- **Enhanced Error Parsing**: Improved extraction of meaningful error messages from Odoo server responses
+
+### Fixed
+- **Create Operations**: Fixed business rule validation compliance for partner creation
+- **Pydantic Validation**: Fixed handling of Odoo's `False` values vs `None` for optional fields
+- **Many2One Fields**: Fixed handling of Odoo's `[id, name]` tuple format for relationship fields
+- **Client Reference**: Fixed client reference passing in model instances for update/delete operations
+- **Authentication Flow**: Improved session management and authentication error handling
+- **Data Conversion**: Added automatic conversion of Odoo data structures to Pydantic-compatible formats
+
+### Changed
+- **README Examples**: Updated all examples to include proper authentication contexts
+- **Error Messages**: Enhanced error messages to be more informative and developer-friendly
+- **Model Validation**: Improved OdooModel validation to handle Odoo-specific data quirks
+- **API Consistency**: Standardized method signatures across transaction and batch managers
+
+### Technical Improvements
+- **Business Rule Compliance**: All create operations now properly handle Odoo's business validation rules
+- **Real Server Testing**: Verified functionality with production Odoo 18 server
+- **Type Safety**: Enhanced type safety while maintaining compatibility with Odoo's dynamic data structures
+- **Error Handling**: Comprehensive error handling for server-side validation and permissions
+- **Session Stability**: Improved session management for long-running operations
+
+### Documentation
+- **Updated Examples**: All README.md examples now work with real Odoo servers
+- **Business Rules**: Added documentation for handling Odoo's business validation requirements
+- **Error Handling**: Enhanced error handling documentation with real-world examples
+
 ## [0.1.0] - 2025-07-28
 
 ### Added

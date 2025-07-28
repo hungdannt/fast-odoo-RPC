@@ -738,37 +738,9 @@ class ZenooClient:
 
         return self.batch_manager
 
-    def transaction(self, **kwargs):
-        """Create a transaction context manager.
+    # Removed old transaction method - see new implementation below
 
-        Args:
-            **kwargs: Transaction options
-
-        Returns:
-            Transaction context manager
-        """
-        if self.transaction_manager is None:
-            raise ZenooError(
-                "Transaction manager not initialized. Call setup_transaction_manager() first."
-            )
-
-        return self.transaction_manager.transaction(**kwargs)
-
-    def batch(self, batch_id: Optional[str] = None):
-        """Create a batch for operations.
-
-        Args:
-            batch_id: Optional batch identifier
-
-        Returns:
-            Batch instance
-        """
-        if self.batch_manager is None:
-            raise ZenooError(
-                "Batch manager not initialized. Call setup_batch_manager() first."
-            )
-
-        return self.batch_manager.create_batch(batch_id)
+    # Removed old batch method - see new implementation below
 
     # Enhanced Error Handling and Validation Methods
 
@@ -1124,3 +1096,108 @@ class ZenooClient:
         return await self.fallback_manager.adaptive_read(
             model, ids, fields, context
         )
+
+    # Transaction and Batch Management Setup Methods
+
+    async def setup_transaction_manager(
+        self,
+        isolation_level: str = "READ_COMMITTED",
+        auto_commit: bool = False,
+        max_retries: int = 3
+    ) -> None:
+        """Setup transaction manager for ACID transaction support.
+
+        Args:
+            isolation_level: Database isolation level
+            auto_commit: Whether to auto-commit transactions
+            max_retries: Maximum number of retry attempts
+
+        Note:
+            This method initializes the transaction manager but doesn't
+            start a transaction. Use client.transaction() context manager
+            to start actual transactions.
+        """
+        # Import here to avoid circular imports
+        from .transaction.manager import TransactionManager
+
+        if not hasattr(self, '_transaction_manager'):
+            self._transaction_manager = TransactionManager(client=self)
+
+        # Transaction manager is ready to use
+
+    async def setup_batch_manager(
+        self,
+        max_chunk_size: int = 100,
+        max_concurrent_batches: int = 5,
+        retry_failed_operations: bool = True
+    ) -> None:
+        """Setup batch manager for efficient bulk operations.
+
+        Args:
+            max_chunk_size: Maximum number of records per batch
+            max_concurrent_batches: Maximum concurrent batch operations
+            retry_failed_operations: Whether to retry failed operations
+
+        Note:
+            This method initializes the batch manager. Use client.batch()
+            context manager to perform actual batch operations.
+        """
+        # Import here to avoid circular imports
+        from .batch.manager import BatchManager
+
+        if not hasattr(self, '_batch_manager'):
+            self._batch_manager = BatchManager(
+                client=self,
+                max_chunk_size=max_chunk_size,
+                max_concurrency=max_concurrent_batches,
+                timeout=None  # Use default timeout
+            )
+
+        # Batch manager is ready to use
+
+    def transaction(self):
+        """Create a transaction context manager.
+
+        Returns:
+            Transaction context manager for ACID operations
+
+        Raises:
+            RuntimeError: If transaction manager is not initialized
+
+        Example:
+            >>> await client.setup_transaction_manager()
+            >>> async with client.transaction() as tx:
+            ...     partner = await client.model(ResPartner).create(name="Test")
+            ...     await partner.update(phone="+123456789")
+            ...     # Automatically committed on successful exit
+        """
+        if not hasattr(self, '_transaction_manager'):
+            raise RuntimeError(
+                "Transaction manager not initialized. "
+                "Call setup_transaction_manager() first."
+            )
+
+        return self._transaction_manager.transaction()
+
+    def batch(self):
+        """Create a batch context manager.
+
+        Returns:
+            Batch context manager for bulk operations
+
+        Raises:
+            RuntimeError: If batch manager is not initialized
+
+        Example:
+            >>> await client.setup_batch_manager(max_chunk_size=50)
+            >>> async with client.batch() as batch:
+            ...     partners_data = [{"name": f"Partner {i}"} for i in range(100)]
+            ...     partners = await batch.create_many(ResPartner, partners_data)
+        """
+        if not hasattr(self, '_batch_manager'):
+            raise RuntimeError(
+                "Batch manager not initialized. "
+                "Call setup_batch_manager() first."
+            )
+
+        return self._batch_manager.batch()

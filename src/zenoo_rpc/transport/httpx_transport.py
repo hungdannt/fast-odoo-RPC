@@ -134,6 +134,10 @@ class AsyncTransport:
             # Catch any other unexpected errors
             if isinstance(e, (ConnectionError, TimeoutError)):
                 raise
+            # Don't wrap ZenooError exceptions - let them bubble up
+            from ..exceptions.base import ZenooError
+            if isinstance(e, ZenooError):
+                raise
             raise ConnectionError(f"Unexpected error during RPC call: {e}") from e
 
     async def health_check(self) -> bool:
