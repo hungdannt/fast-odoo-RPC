@@ -19,9 +19,9 @@ from zenoo_rpc.models.common import ResPartner
 
 async def main():
     # Create client and connect
-    async with ZenooClient("localhost", port=8069) as client:
+    async with ZenooClient("https://your-odoo-server.com") as client:
         # Authenticate
-        await client.login("demo", "admin", "admin")
+        await client.login("your_database", "your_username", "your_password")
         
         # Fetch companies with type safety
         companies = await client.model(ResPartner).filter(
@@ -299,9 +299,12 @@ async def comprehensive_example():
     async with ZenooClient("localhost", port=8069) as client:
         # Setup caching
         await client.cache_manager.setup_memory_cache(max_size=500)
-        
+
+        # Setup transaction manager
+        await client.setup_transaction_manager()
+
         # Authenticate
-        await client.login("demo", "admin", "admin")
+        await client.login("your_database", "your_username", "your_password")
         
         # Complex query with relationships
         us_companies = await client.model(ResPartner).filter(

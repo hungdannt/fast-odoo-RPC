@@ -24,7 +24,7 @@ async def basic_connection_example():
     
     try:
         # Create client with context manager for automatic cleanup
-        async with ZenooClient("localhost", port=8069) as client:
+        async with ZenooClient("https://your-odoo-server.com") as client:
             # Check server health
             is_healthy = await client.health_check()
             print(f"Server health: {'OK' if is_healthy else 'FAILED'}")
@@ -43,7 +43,7 @@ async def basic_connection_example():
             
             # Authenticate (replace with your credentials)
             try:
-                await client.login("demo", "admin", "admin")  # Replace with actual credentials
+                await client.login("your_database", "your_username", "your_password")  # Replace with actual credentials
                 print(f"Successfully authenticated as {client.username} on database {client.database}")
                 print(f"User ID: {client.uid}")
                 

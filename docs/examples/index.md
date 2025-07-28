@@ -43,8 +43,8 @@ from zenoo_rpc import ZenooClient
 from zenoo_rpc.models.common import ResPartner
 
 async def basic_crud_example():
-    async with ZenooClient("localhost", port=8069) as client:
-        await client.login("demo", "admin", "admin")
+    async with ZenooClient("https://your-odoo-server.com") as client:
+        await client.login("your_database", "your_username", "your_password")
         
         # Create
         partner = await client.model(ResPartner).create({
@@ -74,8 +74,8 @@ asyncio.run(basic_crud_example())
 
 ```python
 async def batch_operations_example():
-    async with ZenooClient("localhost") as client:
-        await client.login("demo", "admin", "admin")
+    async with ZenooClient("https://your-odoo-server.com") as client:
+        await client.login("your_database", "your_username", "your_password")
         
         # Batch create multiple records
         async with client.batch() as batch:

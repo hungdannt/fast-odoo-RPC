@@ -71,10 +71,10 @@ from zenoo_rpc import ZenooClient
 from zenoo_rpc.models.common import ResPartner
 
 async def main():
-    async with ZenooClient("localhost", port=8069) as client:
+    async with ZenooClient("https://your-odoo-server.com") as client:
         # Authenticate
-        await client.login("my_database", "admin", "admin")
-        
+        await client.login("your_database", "your_username", "your_password")
+
         # Type-safe queries with IDE support
         partners = await client.model(ResPartner).filter(
             is_company=True,
