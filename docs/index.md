@@ -122,12 +122,12 @@ if __name__ == "__main__":
 - [Production Deployment](tutorials/production-deployment.md) - Deploy with confidence
 
 ### 📋 Examples
-- [Real-World Examples](examples/real-world/) - Production-ready code samples
-- [Common Patterns](examples/patterns/) - Reusable patterns and recipes
-- [Integration Examples](examples/integrations/) - FastAPI, Django, Flask integrations
+- [Real-World Examples](examples/real-world/index.md) - Production-ready code samples
+- [Common Patterns](examples/patterns/index.md) - Reusable patterns and recipes
+- [Integration Examples](examples/integrations/index.md) - FastAPI, Django, Flask integrations
 
 ### 🔧 API Reference
-- [Complete API Documentation](api-reference/) - Auto-generated API reference
+- [Complete API Documentation](api-reference/index.md) - Auto-generated API reference
 
 ### 🏗️ Advanced Topics
 - [Architecture Overview](advanced/architecture.md) - Internal design and patterns

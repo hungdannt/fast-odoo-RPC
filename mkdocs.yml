@@ -179,7 +179,18 @@ nav:
   - Production Deployment: tutorials/production-deployment.md
 
 - Examples:
-  - Real-World Examples: examples/real-world/index.md
+  - Real-World Examples:
+    - Overview: examples/real-world/index.md
+    - Customer Management: examples/real-world/customer-management.md
+    - Sales Dashboard: examples/real-world/sales-dashboard.md
+    - Performance Metrics: examples/real-world/performance-metrics.md
+    - Custom Reports: examples/real-world/custom-reports.md
+    - Data Visualization: examples/real-world/data-visualization.md
+    - Automated Workflows: examples/real-world/automated-workflows.md
+    - Scheduled Tasks: examples/real-world/scheduled-tasks.md
+    - Email Automation: examples/real-world/email-automation.md
+    - Document Processing: examples/real-world/document-processing.md
+    - FastAPI Integration: examples/real-world/fastapi-integration.md
   - Common Patterns: examples/patterns/index.md
   - Integration Examples: examples/integrations/index.md
 
@@ -216,10 +227,12 @@ nav:
   - Architecture: advanced/architecture.md
   - Performance: advanced/performance.md
   - Security: advanced/security.md
-  - Extensions: advanced/extensions.md
+  - Extending Zenoo RPC: advanced/extending.md
 
 - Troubleshooting:
+  - Common Issues: troubleshooting/common-issues.md
   - Debugging Guide: troubleshooting/debugging.md
+  - Monitoring: troubleshooting/monitoring.md
   - FAQ: troubleshooting/faq.md
 
 - Contributing:
