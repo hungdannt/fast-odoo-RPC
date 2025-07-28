@@ -119,29 +119,44 @@ src/zenoo_rpc/
 ```python
 import asyncio
 from zenoo_rpc import ZenooClient
-from zenoo_rpc.models.common import ResPartner
 
 async def main():
-    async with ZenooClient("localhost", port=8069) as client:
+    # Connect to your Odoo server
+    async with ZenooClient("https://your-odoo-server.com") as client:
         # Authenticate
-        await client.login("my_database", "admin", "admin")
+        await client.login("your_database", "your_username", "your_password")
 
-        # Type-safe queries with IDE support
-        partners = await client.model(ResPartner).filter(
-            is_company=True,
-            name__ilike="company%"
-        ).limit(10).all()
+        # Get server information
+        version = await client.get_server_version()
+        print(f"Connected to Odoo {version['server_version']}")
 
-        # Access fields with full type safety
-        for partner in partners:
-            print(f"Company: {partner.name} - Email: {partner.email}")
+        # Search for company partners
+        companies = await client.search_read("res.partner", [
+            ["is_company", "=", True]
+        ], ["name", "email", "phone"], limit=5)
 
-        # Transaction management
-        async with client.transaction() as tx:
-            partner = await client.model(ResPartner).get(1)
-            partner.name = "New Name"
-            partner.email = "new@email.com"
-            # Committed automatically on context exit
+        # Display results
+        print(f"Found {len(companies)} companies:")
+        for i, company in enumerate(companies, 1):
+            name = company['name']
+            email = company.get('email') or 'No email'
+            phone = company.get('phone') or 'No phone'
+            print(f"{i}. {name}")
+            print(f"   Email: {email}")
+            print(f"   Phone: {phone}")
+
+        # Count total partners
+        total_partners = await client.search_count("res.partner", [])
+        print(f"Total partners in system: {total_partners}")
+
+        # Search customers
+        customers = await client.search_read("res.partner", [
+            ["customer_rank", ">", 0]
+        ], ["name", "email"], limit=3)
+
+        print(f"Found {len(customers)} customers:")
+        for customer in customers:
+            print(f"- {customer['name']}")
 
 if __name__ == "__main__":
     asyncio.run(main())
