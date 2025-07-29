@@ -16,6 +16,22 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 ### Fixed
 - TBD for next release
 
+## [0.1.8] - 2025-01-29
+
+### Fixed
+- **Documentation**: Fixed 44+ instances of wrong API usage in documentation
+- **Documentation**: Reverted incorrect `search_read` examples back to beautiful fluent API
+- **Documentation**: Fixed ResUser → ResUsers import in client.md performance tips
+- **Documentation**: All examples now properly showcase ZENOO RPC's crown jewel: the fluent API
+- **Documentation**: Maintained complete API coverage: fluent API (recommended) + low-level API (advanced)
+
+### Changed
+- **Documentation**: Updated docs/api-reference/models/relationships.md - 15 instances reverted to fluent API
+- **Documentation**: Updated docs/api-reference/query/expressions.md - 16 instances reverted to fluent API
+- **Documentation**: Updated docs/api-reference/retry/index.md - 11 instances reverted to fluent API
+- **Documentation**: Updated docs/api-reference/retry/policies.md - 2 instances reverted to fluent API
+- **Documentation**: Updated docs/api-reference/client.md - Fixed ResUsers import, performance tips use fluent API
+
 ## [0.1.7] - 2025-01-28
 
 ### Fixed
