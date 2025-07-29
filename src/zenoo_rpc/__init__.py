@@ -12,6 +12,7 @@ following key features:
 - Batch operations for high performance
 - Structured exception handling
 - Enhanced connection pooling with HTTP/2
+- MCP (Model Context Protocol) integration for AI tools
 """
 
 from .client import ZenooClient
@@ -42,6 +43,22 @@ from .models.common import (
     SaleOrder,
     SaleOrderLine,
 )
+
+# MCP integration (optional)
+try:
+    from . import mcp
+    MCP_CLIENT_AVAILABLE = True
+except ImportError:
+    mcp = None
+    MCP_CLIENT_AVAILABLE = False
+
+# MCP server (optional)
+try:
+    from . import mcp_server
+    MCP_SERVER_AVAILABLE = True
+except ImportError:
+    mcp_server = None
+    MCP_SERVER_AVAILABLE = False
 
 __version__ = "0.2.0"
 __author__ = "Lê Anh Tuấn"
@@ -76,4 +93,9 @@ __all__ = [
     "ProductCategory",
     "SaleOrder",
     "SaleOrderLine",
+    # MCP integration
+    "mcp",
+    "MCP_CLIENT_AVAILABLE",
+    "mcp_server",
+    "MCP_SERVER_AVAILABLE",
 ]

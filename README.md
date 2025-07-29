@@ -2,7 +2,7 @@
 
 <div align="center">
 
-**A zen-like, modern async Python library for Odoo RPC with type safety and superior Developer Experience (DX)**
+**A zen-like, modern async Python library for Odoo RPC with type safety, AI integration, and MCP protocol support**
 
 [![Python 3.8+](https://img.shields.io/badge/python-3.8+-blue.svg)](https://www.python.org/downloads/)
 [![PyPI version](https://img.shields.io/pypi/v/zenoo-rpc.svg)](https://pypi.org/project/zenoo-rpc/)
@@ -34,6 +34,7 @@ Zenoo RPC is a next-generation Python library designed to replace `odoorpc` with
 - **🛡️ Type Safety**: Full Pydantic integration with IDE support and runtime validation
 - **🎯 Fluent API**: Intuitive, chainable query builder that feels natural
 - **🤖 AI-Powered**: Natural language queries, error diagnosis, and code generation
+- **🔌 MCP Integration**: Full Model Context Protocol support for AI assistants (Claude Desktop, ChatGPT)
 - **⚡ Performance**: Intelligent caching, batch operations, and optimized RPC calls
 - **🔧 Modern Python**: Leverages Python 3.8+ features with proper type hints
 - **📦 Clean Architecture**: Well-structured, testable, and maintainable codebase
@@ -82,11 +83,17 @@ pip install zenoo-rpc
 # For Redis caching support
 pip install zenoo-rpc[redis]
 
+# For AI features (Gemini, OpenAI, Anthropic)
+pip install zenoo-rpc[ai]
+
+# For MCP integration (AI assistants)
+pip install zenoo-rpc[mcp]
+
 # For development
 pip install zenoo-rpc[dev]
 
-# All optional dependencies
-pip install zenoo-rpc[dev,redis]
+# All features
+pip install zenoo-rpc[ai,mcp,redis,dev]
 ```
 
 ### From Source
@@ -112,6 +119,9 @@ src/zenoo_rpc/
 ├── transaction/           # Transaction management
 ├── batch/                 # Batch operations
 ├── retry/                 # Retry mechanisms
+├── ai/                    # AI-powered features
+├── mcp_server/            # Model Context Protocol server
+├── mcp_client/            # Model Context Protocol client
 └── utils/                 # Utilities and helpers
 ```
 
@@ -149,6 +159,64 @@ async def main():
 
 if __name__ == "__main__":
     asyncio.run(main())
+```
+
+## 🔌 MCP Integration - AI Assistant Support
+
+Zenoo RPC provides full **Model Context Protocol (MCP)** support, enabling seamless integration with AI assistants like Claude Desktop, ChatGPT, and other MCP-compatible tools.
+
+### 🤖 Use with Claude Desktop
+
+Configure Claude Desktop to use Zenoo RPC as an MCP server:
+
+```json
+// ~/.config/claude/claude_desktop_config.json
+{
+  "mcpServers": {
+    "odoo": {
+      "command": "python",
+      "args": ["-m", "zenoo_rpc.mcp_server.cli"],
+      "env": {
+        "ODOO_URL": "http://localhost:8069",
+        "ODOO_DATABASE": "demo",
+        "ODOO_USERNAME": "admin",
+        "ODOO_PASSWORD": "admin"
+      }
+    }
+  }
+}
+```
+
+Now Claude can directly interact with your Odoo data:
+
+```
+User: "Find all technology companies in Vietnam and analyze their sales"
+
+Claude automatically:
+1. Searches for companies with filters: is_company=True, country='Vietnam', name contains 'tech'
+2. Retrieves their sales orders and analyzes performance
+3. Provides insights and recommendations
+```
+
+### 🛠️ MCP Tools Available
+
+- **search_records** - Advanced search with complex filters
+- **get_record** - Retrieve specific records with relationships
+- **create_record** - Create new records with validation
+- **update_record** - Update existing records
+- **delete_record** - Delete records safely
+- **complex_search** - Advanced queries with Q objects
+- **batch_operation** - High-performance bulk operations
+- **analytics_query** - Data analysis and aggregation
+
+### 🚀 Installation with MCP
+
+```bash
+# Install with MCP support
+pip install zenoo-rpc[mcp]
+
+# Start MCP server
+python -m zenoo_rpc.mcp_server.cli --transport stdio
 ```
 
 ## 🎯 Advanced Features
