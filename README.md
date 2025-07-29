@@ -33,6 +33,7 @@ Zenoo RPC is a next-generation Python library designed to replace `odoorpc` with
 - **🔄 Async-First**: Built with `asyncio` and `httpx` for high-performance concurrent operations
 - **🛡️ Type Safety**: Full Pydantic integration with IDE support and runtime validation
 - **🎯 Fluent API**: Intuitive, chainable query builder that feels natural
+- **🤖 AI-Powered**: Natural language queries, error diagnosis, and code generation
 - **⚡ Performance**: Intelligent caching, batch operations, and optimized RPC calls
 - **🔧 Modern Python**: Leverages Python 3.8+ features with proper type hints
 - **📦 Clean Architecture**: Well-structured, testable, and maintainable codebase
@@ -215,6 +216,54 @@ async with ZenooClient("localhost", port=8069) as client:
         # Committed automatically on successful exit
 ```
 
+### 🤖 AI-Powered Features
+
+Zenoo RPC includes cutting-edge AI capabilities powered by LiteLLM and Google Gemini:
+
+```python
+async with ZenooClient("localhost", port=8069) as client:
+    await client.login("demo", "admin", "admin")
+
+    # Setup AI capabilities
+    await client.setup_ai(
+        provider="gemini",
+        model="gemini-2.5-flash-lite",
+        api_key="your-gemini-api-key"
+    )
+
+    # Natural language queries
+    partners = await client.ai.query("Find all companies in Vietnam with revenue > 1M USD")
+
+    # Intelligent error diagnosis
+    try:
+        result = await client.search("invalid.model", [])
+    except Exception as error:
+        diagnosis = await client.ai.diagnose(error)
+        print(f"Problem: {diagnosis['problem']}")
+        print(f"Solution: {diagnosis['solution']}")
+
+    # Smart code generation
+    model_code = await client.ai.generate_model("res.partner")
+
+    # Performance optimization suggestions
+    suggestions = await client.ai.suggest_optimization(query_stats)
+
+    # Interactive AI chat
+    response = await client.ai.chat("How do I create a Many2one field in Odoo?")
+```
+
+**AI Features:**
+- 🗣️ **Natural Language Queries**: Convert plain English to optimized Odoo queries
+- 🔍 **Error Diagnosis**: AI-powered error analysis with actionable solutions
+- 🏗️ **Code Generation**: Generate typed Python models from Odoo schemas
+- ⚡ **Performance Optimization**: AI suggestions for query and cache optimization
+- 💬 **Interactive Chat**: Get expert advice on Odoo development
+
+**Installation with AI:**
+```bash
+pip install zenoo-rpc[ai]
+```
+
 ## 🧪 Development Status
 
 Zenoo RPC is currently in **Alpha** stage with active development. The core architecture is stable and functional, but we're continuously improving based on community feedback.
@@ -232,12 +281,14 @@ Zenoo RPC is currently in **Alpha** stage with active development. The core arch
 ### Roadmap
 
 - [x] **Phase 1**: Core transport layer and async client
-- [x] **Phase 2**: Pydantic models and query builder foundation  
+- [x] **Phase 2**: Pydantic models and query builder foundation
 - [x] **Phase 3**: Advanced features (caching, transactions, batch ops)
-- [x] **Phase 4**: Documentation and community adoption
-- [ ] **Phase 5**: Performance optimization and production hardening
-- [ ] **Phase 6**: Plugin system and extensibility
-- [ ] **Phase 7**: GraphQL support and modern APIs
+- [x] **Phase 4**: AI-powered features (natural language queries, error diagnosis, code generation)
+- [x] **Phase 5**: Documentation and community adoption
+- [ ] **Phase 6**: Performance optimization and production hardening
+- [ ] **Phase 7**: Advanced AI features (predictive analytics, auto-optimization)
+- [ ] **Phase 8**: Plugin system and extensibility
+- [ ] **Phase 9**: GraphQL support and modern APIs
 
 ### Production Readiness
 

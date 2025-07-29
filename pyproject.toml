@@ -4,7 +4,7 @@ build-backend = "setuptools.build_meta"
 
 [project]
 name = "zenoo-rpc"
-version = "0.1.8"
+version = "0.2.0"
 description = "A zen-like, modern async Python library for Odoo RPC with type safety, transactions, caching, and superior DX"
 readme = "README.md"
 license = {text = "MIT"}
@@ -56,6 +56,9 @@ docs = [
 ]
 redis = [
     "redis[hiredis]>=5.0.0",
+]
+ai = [
+    "litellm>=1.0.0",
 ]
 
 [project.urls]

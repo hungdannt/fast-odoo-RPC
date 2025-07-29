@@ -6,7 +6,7 @@ through the Zenoo-RPC library. It combines transport, session management,
 and high-level API features with zen-like simplicity.
 """
 
-from typing import Any, Dict, List, Optional, Type, TypeVar, TYPE_CHECKING
+from typing import Any, Dict, List, Optional, Type, TypeVar, TYPE_CHECKING, Union
 
 from .exceptions import AuthenticationError, ZenooError
 from .transport import AsyncTransport, SessionManager
@@ -18,6 +18,7 @@ if TYPE_CHECKING:
     from .transaction.manager import TransactionManager
     from .cache.manager import CacheManager
     from .batch.manager import BatchManager
+    from .ai.core.ai_assistant import AIAssistant
 
 T = TypeVar("T")
 
@@ -106,6 +107,9 @@ class ZenooClient:
         self.cache_manager: Optional["CacheManager"] = None
         self.batch_manager: Optional["BatchManager"] = None
         self._fallback_manager = None
+
+        # AI features - initialized lazily
+        self.ai: Optional["AIAssistant"] = None
 
     def _parse_host_or_url(
         self,
@@ -582,6 +586,15 @@ class ZenooClient:
 
     async def close(self) -> None:
         """Close the client and clean up resources."""
+        # Close AI assistant if initialized
+        if self.ai is not None:
+            await self.ai.close()
+
+        # Close other managers
+        if self.cache_manager is not None:
+            await self.cache_manager.close()
+
+        # Close transport and clear session
         await self._transport.close()
         self._session.clear()
 
@@ -737,6 +750,69 @@ class ZenooClient:
             )
 
         return self.batch_manager
+
+    async def setup_ai(
+        self,
+        provider: str = "gemini",
+        model: str = "gemini-2.5-flash-lite",
+        api_key: str = "",
+        **config_kwargs
+    ) -> "AIAssistant":
+        """Setup AI capabilities for the client.
+
+        This method initializes AI-powered features including:
+        - Natural language to Odoo query conversion
+        - Intelligent error diagnosis and solutions
+        - Smart code generation and optimization
+        - Performance analysis and recommendations
+
+        Args:
+            provider: AI provider (gemini, openai, anthropic, azure)
+            model: Model name (e.g., "gemini-2.5-flash-lite")
+            api_key: API key for the provider
+            **config_kwargs: Additional configuration parameters
+
+        Returns:
+            AIAssistant instance
+
+        Raises:
+            ImportError: If AI dependencies are not installed
+            ValueError: If required parameters are missing
+
+        Example:
+            >>> async with ZenooClient("localhost") as client:
+            ...     await client.login("demo", "admin", "admin")
+            ...
+            ...     # Setup AI with Gemini
+            ...     await client.setup_ai(
+            ...         provider="gemini",
+            ...         model="gemini-2.5-flash-lite",
+            ...         api_key="your-api-key"
+            ...     )
+            ...
+            ...     # Use AI features
+            ...     partners = await client.ai.query("Find all companies in Vietnam")
+            ...     diagnosis = await client.ai.diagnose(error)
+        """
+        if self.ai is None:
+            try:
+                from .ai.core.ai_assistant import AIAssistant
+
+                self.ai = AIAssistant(self)
+                await self.ai.initialize(
+                    provider=provider,
+                    model=model,
+                    api_key=api_key,
+                    **config_kwargs
+                )
+
+            except ImportError as e:
+                raise ImportError(
+                    "AI features require additional dependencies. "
+                    "Install with: pip install zenoo-rpc[ai]"
+                ) from e
+
+        return self.ai
 
     # Removed old transaction method - see new implementation below
 
