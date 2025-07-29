@@ -61,7 +61,7 @@ Authenticate with the Odoo server.
 - `username` (str): Username
 - `password` (str): Password
 
-**Returns:** `bool` - True if authentication successful
+**Returns:** `None` - Raises exception if authentication fails
 
 **Raises:**
 - `AuthenticationError`: If authentication fails
@@ -71,21 +71,23 @@ Authenticate with the Odoo server.
 
 ```python
 async with ZenooClient("localhost", port=8069) as client:
-    success = await client.login("demo", "admin", "admin")
-    if success:
-        print("Authentication successful")
+    await client.login("demo", "admin", "admin")
+    print("Authentication successful")
+    # Check authentication status
+    if client.is_authenticated:
+        print(f"Logged in as {client.username}")
 ```
 
-### `async logout()`
+### Session Management
 
-Log out from the Odoo server and clear session.
-
-**Returns:** `bool` - True if logout successful
+The client automatically manages sessions. Use the context manager for proper cleanup:
 
 **Example:**
 
 ```python
-await client.logout()
+async with ZenooClient("localhost") as client:
+    await client.login("demo", "admin", "admin")
+    # Session automatically cleaned up on exit
 ```
 
 ## Properties
@@ -123,36 +125,52 @@ Get the connection protocol.
 
 **Type:** `str`
 
-### `base_url`
+### `database`
 
-Get the complete base URL.
+Get the current database name (after authentication).
 
-**Type:** `str`
+**Type:** `Optional[str]`
+
+### `username`
+
+Get the current username (after authentication).
+
+**Type:** `Optional[str]`
+
+### `uid`
+
+Get the current user ID (after authentication).
+
+**Type:** `Optional[int]`
 
 **Example:**
 
 ```python
 client = ZenooClient("demo.odoo.com", port=443, protocol="https")
-print(client.base_url)  # "https://demo.odoo.com:443"
+await client.login("demo", "admin", "admin")
+print(f"Database: {client.database}")
+print(f"User: {client.username} (ID: {client.uid})")
 ```
 
 ## Core CRUD Operations
 
-### `async create(model, data, context=None)`
+### `async create(model, values, context=None, validate_required=True)`
 
 Create a new record.
 
 **Parameters:**
 
 - `model` (str): Odoo model name (e.g., "res.partner")
-- `data` (dict): Record data
+- `values` (dict): Record data
 - `context` (dict, optional): Execution context
+- `validate_required` (bool): Whether to validate required fields (default: True)
 
 **Returns:** `int` - ID of created record
 
 **Raises:**
 - `ValidationError`: If data validation fails
 - `AccessError`: If user lacks create permissions
+- `AuthenticationError`: If not authenticated
 
 **Example:**
 
@@ -191,7 +209,7 @@ records = await client.read(
 )
 ```
 
-### `async write(model, ids, data, context=None)`
+### `async write(model, ids, values, context=None, check_access=True)`
 
 Update existing records.
 
@@ -199,10 +217,16 @@ Update existing records.
 
 - `model` (str): Odoo model name
 - `ids` (list[int]): List of record IDs to update
-- `data` (dict): Update data
+- `values` (dict): Update data
 - `context` (dict, optional): Execution context
+- `check_access` (bool): Whether to check record access (default: True)
 
 **Returns:** `bool` - True if update successful
+
+**Raises:**
+- `ValidationError`: If data validation fails
+- `AccessError`: If user lacks write permissions
+- `AuthenticationError`: If not authenticated
 
 **Example:**
 
@@ -233,54 +257,41 @@ success = await client.unlink("res.partner", [1, 2, 3])
 
 ## Search Operations
 
-### `async search(model, domain=None, offset=0, limit=None, order=None, context=None)`
+### Using Query Builder (Recommended)
 
-Search for record IDs matching domain.
-
-**Parameters:**
-
-- `model` (str): Odoo model name
-- `domain` (list, optional): Search domain (default: [])
-- `offset` (int): Number of records to skip (default: 0)
-- `limit` (int, optional): Maximum number of records
-- `order` (str, optional): Sort order
-- `context` (dict, optional): Execution context
-
-**Returns:** `list[int]` - List of matching record IDs
-
-**Example:**
+For type-safe searches, use the query builder:
 
 ```python
-# Search all companies
-company_ids = await client.search("res.partner", [
-    ("is_company", "=", True)
-])
+from zenoo_rpc.models.common import ResPartner
 
-# Search with pagination and ordering
-partner_ids = await client.search(
-    "res.partner",
-    domain=[("customer_rank", ">", 0)],
-    offset=20,
-    limit=10,
-    order="name ASC"
-)
+# Type-safe search with query builder
+companies = await client.model(ResPartner).filter(
+    is_company=True
+).limit(10).all()
+
+# Get IDs only
+company_ids = [partner.id for partner in companies]
 ```
 
-### `async search_read(model, domain=None, fields=None, offset=0, limit=None, order=None, context=None)`
+### Low-Level Search (Advanced)
+
+For direct Odoo API access, use `search_read()` which is available:
+
+### `async search_read(model, domain, fields=None, limit=None, offset=0, order=None, context=None)`
 
 Search and read records in one operation.
 
 **Parameters:**
 
 - `model` (str): Odoo model name
-- `domain` (list, optional): Search domain
-- `fields` (list[str], optional): Fields to read
-- `offset` (int): Number of records to skip
-- `limit` (int, optional): Maximum number of records
-- `order` (str, optional): Sort order
+- `domain` (list): Search domain (list of tuples)
+- `fields` (list[str], optional): Fields to read (None for all fields)
+- `limit` (int, optional): Maximum number of records to return
+- `offset` (int): Number of records to skip (default: 0)
+- `order` (str, optional): Sort order specification
 - `context` (dict, optional): Execution context
 
-**Returns:** `list[dict]` - List of record data
+**Returns:** `list[dict]` - List of record dictionaries
 
 **Example:**
 
@@ -294,17 +305,21 @@ partners = await client.search_read(
 )
 ```
 
-### `async search_count(model, domain=None, context=None)`
+### `async search_count(model, domain, context=None)`
 
 Count records matching domain.
 
 **Parameters:**
 
 - `model` (str): Odoo model name
-- `domain` (list, optional): Search domain
+- `domain` (list): Search domain (list of tuples)
 - `context` (dict, optional): Execution context
 
 **Returns:** `int` - Number of matching records
+
+**Raises:**
+- `AuthenticationError`: If not authenticated
+- `ZenooError`: If the server returns an error
 
 **Example:**
 
@@ -368,26 +383,19 @@ result = await client.execute_kw(
 )
 ```
 
-### `async call_method(service, method, *args)`
+### Server Information
 
-Call Odoo service method directly.
-
-**Parameters:**
-
-- `service` (str): Service name ("common", "object", "db")
-- `method` (str): Method name
-- `*args`: Method arguments
-
-**Returns:** `Any` - Method result
-
-**Example:**
+Get server information using available methods:
 
 ```python
 # Get server version
-version = await client.call_method("common", "version")
+version = await client.get_server_version()
 
-# Get database list
-databases = await client.call_method("db", "list")
+# List available databases
+databases = await client.list_databases()
+
+# Check server health
+health = await client.health_check()
 ```
 
 ## Context Managers
@@ -494,22 +502,23 @@ Close the client and cleanup resources.
 await client.close()
 ```
 
-### `set_context(context)`
+### Context Management
 
-Set default context for all operations.
-
-**Parameters:**
-
-- `context` (dict): Default context
+Context is passed per operation rather than set globally:
 
 **Example:**
 
 ```python
-client.set_context({
-    "lang": "en_US",
-    "tz": "UTC",
-    "active_test": False
-})
+# Pass context to individual operations
+partners = await client.search_read(
+    "res.partner",
+    domain=[("is_company", "=", True)],
+    context={
+        "lang": "en_US",
+        "tz": "UTC",
+        "active_test": False
+    }
+)
 ```
 
 ## Error Handling
@@ -572,16 +581,18 @@ async def main():
 **Example:**
 
 ```python
+from zenoo_rpc.models.common import ResPartner, ResUsers
+
 # Good: Reuse client
 class MyService:
     def __init__(self, client: ZenooClient):
         self.client = client
     
     async def operation1(self):
-        return await self.client.search("res.partner", [])
-    
+        return await self.client.model(ResPartner).all()
+
     async def operation2(self):
-        return await self.client.search("res.users", [])
+        return await self.client.model(ResUsers).all()
 
 # Usage
 async with ZenooClient("localhost") as client:

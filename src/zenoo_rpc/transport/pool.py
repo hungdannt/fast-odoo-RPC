@@ -160,8 +160,8 @@ class PooledConnection:
         return time.time() - self.health_check_at > interval
 
 
-class EnhancedConnectionPool:
-    """Enhanced connection pool with HTTP/2 support and health monitoring.
+class ConnectionPool:
+    """Connection pool with HTTP/2 support and health monitoring.
 
     This class provides advanced connection pooling capabilities including:
     - HTTP/2 support with multiplexing
@@ -178,7 +178,7 @@ class EnhancedConnectionPool:
     - Connection lifecycle management
 
     Example:
-        >>> pool = EnhancedConnectionPool(
+        >>> pool = ConnectionPool(
         ...     base_url="https://demo.odoo.com",
         ...     pool_size=10,
         ...     http2=True
@@ -564,7 +564,7 @@ class EnhancedConnectionPool:
 class ConnectionContext:
     """Context manager for pooled connections."""
 
-    def __init__(self, pool: EnhancedConnectionPool):
+    def __init__(self, pool: ConnectionPool):
         """Initialize connection context.
 
         Args:

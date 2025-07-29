@@ -106,13 +106,13 @@ async with OptimizedClient("localhost") as client:
 ### Connection Pool Management
 
 ```python
-from zenoo_rpc.transport.pool import EnhancedConnectionPool
+from zenoo_rpc.transport.pool import ConnectionPool
 
 class HighPerformancePool:
     """Enterprise-grade connection pool."""
-    
+
     def __init__(self, base_url: str):
-        self.pool = EnhancedConnectionPool(
+        self.pool = ConnectionPool(
             base_url=base_url,
             pool_size=20,              # Initial pool size
             max_connections=100,       # Maximum connections

@@ -62,7 +62,7 @@ Load the relationship data from the server.
 **Example:**
 
 ```python
-# Access relationship (creates LazyRelationship)
+# Get partner data with relationship IDs
 partner = await client.model(ResPartner).filter(id=1).first()
 country_rel = partner.country_id  # Returns LazyRelationship
 
@@ -138,7 +138,7 @@ LazyRelationship automatically prevents N+1 queries through intelligent batch lo
 **Example:**
 
 ```python
-# This will trigger batch loading for all partners
+# Get multiple partners with batch loading
 partners = await client.model(ResPartner).filter(is_company=True).limit(100).all()
 
 # All country relationships will be loaded in a single batch query
@@ -325,7 +325,8 @@ class SaleOrder(OdooModel):
     )
 
 # Usage
-order = await client.model(SaleOrder).filter(id=1).first()
+order_data = await client.search_read('sale.order', [('id', '=', 1)], limit=1)
+order = SaleOrder.model_validate(order_data[0])
 
 # Lazy loading
 customer = await order.partner_id
@@ -389,14 +390,14 @@ for category in categories:
 Use QuerySet prefetching for optimal performance.
 
 ```python
-# Prefetch relationships at query level
-partners = await client.model(ResPartner).filter(
-    is_company=True
-).prefetch_related(
-    "country_id",
-    "state_id", 
-    "child_ids"
-).limit(50).all()
+# Get partners and manually prefetch relationships
+partners = await client.model(ResPartner).filter(is_company=True).limit(50).all()
+
+# Prefetch relationships for all partners
+for partner in partners:
+    await partner._relationship_manager.prefetch_relationships([
+        "country_id", "state_id", "child_ids"
+    ])
 
 # All relationships are pre-loaded
 for partner in partners:
@@ -414,14 +415,14 @@ Prefetch nested relationships efficiently.
 
 ```python
 # Prefetch nested relationships
-orders = await client.model(SaleOrder).filter(
-    state="sale"
-).prefetch_related(
-    "partner_id",
-    "partner_id__country_id",
-    "order_line",
-    "order_line__product_id"
-).all()
+orders_data = await client.search_read('sale.order', [('state', '=', 'sale')])
+orders = [SaleOrder.model_validate(data) for data in orders_data]
+
+# Prefetch relationships for all orders
+for order in orders:
+    await order._relationship_manager.prefetch_relationships([
+        "partner_id", "order_line"
+    ])
 
 # Access nested relationships without additional queries
 for order in orders:
@@ -519,9 +520,7 @@ async def load_partners_with_countries(partner_ids: List[int]):
     """Efficiently load partners with their countries."""
     
     # Load all partners
-    partners = await client.model(ResPartner).filter(
-        id__in=partner_ids
-    ).all()
+    partners = await client.model(ResPartner).filter(id__in=partner_ids).all()
     
     # Batch load all countries in one query
     # This happens automatically due to batch loading
@@ -545,9 +544,13 @@ async def process_large_dataset():
     offset = 0
     
     while True:
-        partners = await client.model(ResPartner).filter(
-            is_company=True
-        ).offset(offset).limit(chunk_size).all()
+        partners_data = await client.search_read(
+            'res.partner',
+            [('is_company', '=', True)],
+            offset=offset,
+            limit=chunk_size
+        )
+        partners = [ResPartner.model_validate(data) for data in partners_data]
         
         if not partners:
             break
@@ -622,9 +625,9 @@ country = await load_with_timeout(partner.country_id, timeout=5.0)
 
 ```python
 # ✅ Good: Prefetch known relationships
-partners = await client.model(ResPartner).prefetch_related(
-    "country_id", "state_id"
-).all()
+partners = await client.model(ResPartner).all()
+for partner in partners:
+    await partner._relationship_manager.prefetch_relationships(["country_id", "state_id"])
 
 # ❌ Avoid: Loading relationships in loops
 partners = await client.model(ResPartner).all()

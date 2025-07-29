@@ -214,6 +214,12 @@ class ResPartner(OdooModel):
         max_length=254,
         description="Email address"
     )
+
+    # Phone field
+    phone: Optional[str] = CharField(
+        max_length=32,
+        description="Phone number"
+    )
 ```
 
 ### TextField
@@ -707,11 +713,11 @@ odoo_data = {
     "category_id": [1, 2, 3]  # Odoo many2many format
 }
 
-# Convert to model
-partner = ResPartner.from_odoo_data(odoo_data)
+# Convert to model using Pydantic validation
+partner = ResPartner.model_validate(odoo_data)
 
-# Convert back to Odoo format
-odoo_format = partner.to_odoo_data()
+# Convert back to dict format
+odoo_format = partner.model_dump()
 ```
 
 ## Best Practices

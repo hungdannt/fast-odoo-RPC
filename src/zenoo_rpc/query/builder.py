@@ -347,10 +347,11 @@ class QuerySet(AsyncIterable[T]):
         results = await limited_qs.all()
         return results[0] if results else None
 
-    async def get(self, **filters: Any) -> T:
+    async def get(self, *args, **filters: Any) -> T:
         """Get a single record matching the filters.
 
         Args:
+            *args: If provided, first argument is treated as ID
             **filters: Additional filters to apply
 
         Returns:
@@ -358,7 +359,23 @@ class QuerySet(AsyncIterable[T]):
 
         Raises:
             ValueError: If no record found or multiple records found
+
+        Examples:
+            >>> # Get by ID (as documented in README.md)
+            >>> partner = await client.model(ResPartner).get(1)
+            >>>
+            >>> # Get by filters
+            >>> partner = await client.model(ResPartner).get(email="test@example.com")
+            >>>
+            >>> # Get by ID with additional filters (not supported in this approach)
+            >>> partner = await client.model(ResPartner).get(id=1, is_company=True)
         """
+        # Handle positional ID argument
+        if args:
+            if len(args) > 1:
+                raise TypeError(f"get() takes at most 1 positional argument ({len(args)} given)")
+            filters['id'] = args[0]
+
         qs = self.filter(**filters) if filters else self
         results = await qs.limit(2).all()  # Limit to 2 to detect multiple results
 
@@ -689,16 +706,24 @@ class QueryBuilder:
         """
         return self.all().order_by(*fields)
 
-    async def get(self, **filters: Any) -> T:
+    async def get(self, *args, **filters: Any) -> T:
         """Get a single record.
 
         Args:
+            *args: If provided, first argument is treated as ID
             **filters: Filters to apply
 
         Returns:
             Single model instance
+
+        Examples:
+            >>> # Get by ID (as documented in README.md)
+            >>> partner = await client.model(ResPartner).get(1)
+            >>>
+            >>> # Get by filters
+            >>> partner = await client.model(ResPartner).get(is_company=True)
         """
-        return await self.filter(**filters).get()
+        return await self.filter().get(*args, **filters)
 
     async def create(self, **values: Any) -> T:
         """Create a new record.

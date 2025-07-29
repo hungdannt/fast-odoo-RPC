@@ -186,6 +186,7 @@ class DefaultRetryPolicy(RetryPolicy):
 
 ```python
 from zenoo_rpc.retry.policies import DefaultRetryPolicy
+from zenoo_rpc.models.common import ResPartner
 
 policy = DefaultRetryPolicy()
 
@@ -194,7 +195,7 @@ from zenoo_rpc.retry.decorators import async_retry
 
 @async_retry(policy=policy)
 async def reliable_operation():
-    return await client.model(ResPartner).search([])
+    return await client.model(ResPartner).all()
 ```
 
 ### NetworkRetryPolicy
@@ -347,7 +348,7 @@ from zenoo_rpc.retry.decorators import network_retry
 
 @network_retry(max_attempts=5, base_delay=2.0)
 async def api_call():
-    return await client.model(ResPartner).search([])
+    return await client.model(ResPartner).all()
 ```
 
 #### `@database_retry`
@@ -390,7 +391,7 @@ policy.circuit_breaker = circuit_breaker
 
 @async_retry(policy=policy)
 async def protected_operation():
-    return await client.model(ResPartner).search([])
+    return await client.model(ResPartner).all()
 ```
 
 ### Advanced Circuit Breaker
@@ -459,7 +460,7 @@ def custom_retry_condition(exception, attempt):
 
 @async_retry(retry_condition=custom_retry_condition)
 async def custom_operation():
-    return await client.model(ResPartner).search([])
+    return await client.model(ResPartner).all()
 ```
 
 ## Advanced Patterns
@@ -467,14 +468,15 @@ async def custom_operation():
 ### Retry with Fallback
 
 ```python
-from zenoo_rpc.retry.decorators import retry_with_fallback
+from zenoo_rpc.retry.decorators import async_retry
+from zenoo_rpc.retry.exceptions import MaxRetriesExceededError
 
-@retry_with_fallback(
-    max_attempts=3,
-    fallback_value=[]  # Return empty list if all retries fail
-)
+@async_retry(max_attempts=3)
 async def get_partners_with_fallback():
-    return await client.model(ResPartner).filter(is_company=True).all()
+    try:
+        return await client.model(ResPartner).filter(is_company=True).all()
+    except MaxRetriesExceededError:
+        return []  # Return empty list if all retries fail
 
 # Will return empty list if all retries fail
 partners = await get_partners_with_fallback()
@@ -484,18 +486,15 @@ partners = await get_partners_with_fallback()
 
 ```python
 import asyncio
-from zenoo_rpc.retry.decorators import retry_with_timeout
+from zenoo_rpc.retry.decorators import async_retry
 
-@retry_with_timeout(
-    max_attempts=5,
-    base_delay=1.0,
-    total_timeout=30.0  # Give up after 30 seconds total
-)
+@async_retry(max_attempts=5, delay=1.0)
 async def time_limited_operation():
-    return await client.model(ResPartner).search([])
+    return await client.model(ResPartner).all()
 
 try:
-    partners = await time_limited_operation()
+    # Use asyncio.wait_for for timeout control
+    partners = await asyncio.wait_for(time_limited_operation(), timeout=30.0)
 except asyncio.TimeoutError:
     print("Operation timed out after 30 seconds")
 ```
@@ -575,7 +574,7 @@ event_handler = CustomRetryEventHandler()
     event_handler=event_handler
 )
 async def event_monitored_operation():
-    return await client.model(ResPartner).search([])
+    return await client.model(ResPartner).all()
 ```
 
 ## Error Handling
@@ -652,7 +651,7 @@ async def external_service_call():
     max_attempts=3
 )
 async def selective_retry():
-    return await client.model(ResPartner).search([])
+    return await client.model(ResPartner).all()
 
 # ❌ Avoid: Retrying non-transient errors
 @async_retry(max_attempts=3)  # Will retry ValidationError, etc.
@@ -674,7 +673,7 @@ def log_retry_attempt(attempt):
     on_retry=log_retry_attempt
 )
 async def monitored_operation():
-    return await client.model(ResPartner).search([])
+    return await client.model(ResPartner).all()
 ```
 
 ## Next Steps

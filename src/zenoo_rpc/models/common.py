@@ -5,7 +5,7 @@ This module provides pre-defined model classes for common Odoo models
 with proper field definitions and type safety.
 """
 
-from typing import List, Optional, Union
+from typing import List, Optional, Union, ClassVar
 from datetime import date, datetime
 from decimal import Decimal
 
@@ -29,7 +29,7 @@ from .registry import register_model
 
 @register_model("res.partner")
 class ResPartner(OdooModel):
-    odoo_name: str = "res.partner"
+    odoo_name: ClassVar[str] = "res.partner"
     """Partner (Customer/Vendor/Contact) model.
     
     This model represents partners in Odoo, including customers,

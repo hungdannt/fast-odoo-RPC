@@ -101,6 +101,10 @@ class DefaultRetryPolicy(RetryPolicy):
         # Non-retryable: ValueError, TypeError, AttributeError, KeyError, IndexError
         # Strategy: ExponentialBackoff (3 attempts, 1s base, 2x multiplier, 30s max)
         # Timeout: 60 seconds
+        super().__init__(
+            strategy=ExponentialBackoffStrategy(max_attempts=3),
+            timeout=60.0
+        )
 ```
 
 **Configuration:**
@@ -117,11 +121,12 @@ class DefaultRetryPolicy(RetryPolicy):
 ```python
 from zenoo_rpc.retry.policies import DefaultRetryPolicy
 from zenoo_rpc.retry.decorators import async_retry
+from zenoo_rpc.models.common import ResPartner
 
 # Use default policy
 @async_retry(policy=DefaultRetryPolicy())
 async def reliable_operation():
-    return await client.model(ResPartner).search([])
+    return await client.model(ResPartner).all()
 
 # Delays: ~1s, ~2s, ~4s (with jitter)
 ```
@@ -139,6 +144,10 @@ class NetworkRetryPolicy(RetryPolicy):
         # Strategy: ExponentialBackoff (5 attempts, 0.5s base, 1.5x multiplier, 10s max)
         # Timeout: 30 seconds
         # Custom condition: HTTP 5xx errors are retryable
+        super().__init__(
+            strategy=ExponentialBackoffStrategy(max_attempts=5),
+            timeout=30.0
+        )
 ```
 
 **Configuration:**
@@ -211,6 +220,10 @@ class QuickRetryPolicy(RetryPolicy):
         # Strategy: ExponentialBackoff (2 attempts, 0.1s base, 2x multiplier, 1s max)
         # Timeout: 5 seconds
         # Jitter: Disabled for predictable timing
+        super().__init__(
+            strategy=ExponentialBackoffStrategy(max_attempts=2),
+            timeout=5.0
+        )
 ```
 
 **Configuration:**

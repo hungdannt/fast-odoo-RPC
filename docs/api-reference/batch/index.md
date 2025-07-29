@@ -20,20 +20,50 @@ Main batch management interface coordinating bulk operations.
 
 ```python
 class BatchManager:
-    """Manages batch operations for a Zenoo RPC client."""
-    
+    """Main batch operations manager for Zenoo RPC.
+
+    This class provides a high-level interface for creating and executing
+    batch operations with automatic optimization and error handling.
+
+    Features:
+    - Fluent interface for batch building
+    - Automatic operation optimization
+    - Progress tracking and monitoring
+    - Error handling and recovery
+    - Performance statistics
+    """
+
     def __init__(
         self,
-        client: ZenooClient,
+        client: Any,
         max_chunk_size: int = 100,
         max_concurrency: int = 5,
-        timeout: Optional[float] = 300
+        timeout: Optional[int] = None,
     ):
-        """Initialize batch manager."""
+        """Initialize batch manager.
+
+        Args:
+            client: Zenoo RPC client instance
+            max_chunk_size: Maximum records per chunk
+            max_concurrency: Maximum concurrent operations
+            timeout: Operation timeout in seconds
+        """
         self.client = client
         self.max_chunk_size = max_chunk_size
         self.max_concurrency = max_concurrency
         self.timeout = timeout
+
+        # Active batches
+        self.active_batches = {}
+
+        # Statistics
+        self.stats = {
+            "total_batches": 0,
+            "completed_batches": 0,
+            "failed_batches": 0,
+            "total_operations": 0,
+            "total_records": 0,
+        }
 ```
 
 **Parameters:**
@@ -41,7 +71,7 @@ class BatchManager:
 - `client` (ZenooClient): Zenoo RPC client instance
 - `max_chunk_size` (int): Maximum records per chunk (default: 100)
 - `max_concurrency` (int): Maximum concurrent operations (default: 5)
-- `timeout` (float, optional): Operation timeout in seconds (default: 300)
+- `timeout` (int, optional): Operation timeout in seconds (default: None)
 
 **Example:**
 
@@ -76,22 +106,26 @@ Create a batch context for collecting and executing operations.
 ```python
 # Basic batch context
 async with batch_manager.batch() as batch_context:
-    # Operations are collected and executed automatically
-    created_ids = await batch_manager.bulk_create(
+    # Operations are collected and executed automatically on context exit
+    await batch_context.create(
         model="res.partner",
-        records=[
+        data=[
             {"name": "Company A", "email": "a@company.com"},
             {"name": "Company B", "email": "b@company.com"}
         ]
     )
-    
+
     # Update operations
-    await batch_manager.bulk_write(
+    await batch_context.update(
         model="res.partner",
-        updates=[
-            {"id": created_ids[0], "data": {"phone": "+1-555-0001"}},
-            {"id": created_ids[1], "data": {"phone": "+1-555-0002"}}
-        ]
+        record_ids=[1, 2],
+        data={"active": True}
+    )
+
+    # Delete operations
+    await batch_context.delete(
+        model="res.partner",
+        record_ids=[3, 4, 5]
     )
 ```
 
@@ -120,28 +154,28 @@ partners_data = [
     {"name": "Tech Solutions", "email": "hello@tech.com", "is_company": True}
 ]
 
-async with batch_manager.batch() as batch_context:
-    created_ids = await batch_manager.bulk_create(
-        model="res.partner",
-        records=partners_data,
-        chunk_size=50
-    )
-    
-    print(f"Created {len(created_ids)} partners")
-    for i, partner_id in enumerate(created_ids):
-        print(f"Partner {i+1}: ID {partner_id}")
+created_ids = await batch_manager.bulk_create(
+    model="res.partner",
+    records=partners_data,
+    chunk_size=50
+)
+
+print(f"Created {len(created_ids)} partners")
+for i, partner_id in enumerate(created_ids):
+    print(f"Partner {i+1}: ID {partner_id}")
 ```
 
-#### `async bulk_write(model, updates, chunk_size=None, context=None)`
+#### `async bulk_update(model, data, record_ids=None, chunk_size=None, context=None)`
 
 Update multiple records efficiently.
 
 **Parameters:**
 
 - `model` (str): Odoo model name
-- `updates` (List[Dict[str, Any]]): List of update operations
-  - Format: `[{"id": record_id, "data": update_data}, ...]`
-  - Or: `[{"ids": [id1, id2], "data": update_data}, ...]`
+- `data` (Union[Dict[str, Any], List[Dict[str, Any]]]): Update data
+  - Dict: Same data for all records (requires record_ids)
+  - List: Individual data per record (format: `[{"id": 1, "field": "value"}, ...]`)
+- `record_ids` (List[int], optional): Record IDs (required if data is dict)
 - `chunk_size` (int, optional): Override default chunk size
 - `context` (Dict[str, Any], optional): Execution context
 
@@ -151,34 +185,26 @@ Update multiple records efficiently.
 
 ```python
 # Individual record updates
-updates = [
-    {"id": 1, "data": {"active": True, "customer_rank": 1}},
-    {"id": 2, "data": {"active": True, "customer_rank": 2}},
-    {"id": 3, "data": {"active": False, "customer_rank": 0}}
+individual_updates = [
+    {"id": 1, "active": True, "customer_rank": 1},
+    {"id": 2, "active": True, "customer_rank": 2},
+    {"id": 3, "active": False, "customer_rank": 0}
 ]
 
-async with batch_manager.batch() as batch_context:
-    success = await batch_manager.bulk_write(
-        model="res.partner",
-        updates=updates
-    )
+success = await batch_manager.bulk_update(
+    model="res.partner",
+    data=individual_updates
+)
 
-# Bulk update with same data
-bulk_updates = [
-    {
-        "ids": [1, 2, 3, 4, 5],
-        "data": {"active": True, "customer_rank": 1}
-    }
-]
-
-async with batch_manager.batch() as batch_context:
-    success = await batch_manager.bulk_write(
-        model="res.partner",
-        updates=bulk_updates
-    )
+# Bulk update with same data for multiple records
+success = await batch_manager.bulk_update(
+    model="res.partner",
+    data={"active": True, "customer_rank": 1},
+    record_ids=[1, 2, 3, 4, 5]
+)
 ```
 
-#### `async bulk_unlink(model, record_ids, chunk_size=None, context=None)`
+#### `async bulk_delete(model, record_ids, chunk_size=None, context=None)`
 
 Delete multiple records efficiently.
 
@@ -197,15 +223,14 @@ Delete multiple records efficiently.
 # Delete multiple records
 record_ids_to_delete = [10, 11, 12, 13, 14]
 
-async with batch_manager.batch() as batch_context:
-    success = await batch_manager.bulk_unlink(
-        model="res.partner",
-        record_ids=record_ids_to_delete,
-        chunk_size=25
-    )
-    
-    if success:
-        print(f"Successfully deleted {len(record_ids_to_delete)} records")
+success = await batch_manager.bulk_delete(
+    model="res.partner",
+    record_ids=record_ids_to_delete,
+    chunk_size=25
+)
+
+if success:
+    print(f"Successfully deleted {len(record_ids_to_delete)} records")
 ```
 
 ### Advanced Batch Operations
@@ -234,7 +259,7 @@ batch.create("res.partner", [
 
 batch.update("res.partner", {"active": False}, record_ids=[1, 2, 3])
 
-batch.delete("res.partner", [4, 5, 6])
+batch.unlink("res.partner", [4, 5, 6])
 
 # Execute batch
 results = await batch.execute()
@@ -270,8 +295,10 @@ operations = [
 ]
 
 # Progress callback
-def progress_callback(completed, total, operation):
-    print(f"Progress: {completed}/{total} - {operation.model}")
+async def progress_callback(progress):
+    print(f"Progress: {progress['completed']}/{progress['total']} "
+          f"({progress['percentage']:.1f}%)")
+    print(f"Stats: {progress['stats']}")
 
 # Execute operations
 results = await batch_manager.execute_operations(
@@ -293,11 +320,22 @@ Batch create operation for multiple record creation.
 @dataclass
 class CreateOperation(BatchOperation):
     """Batch create operation."""
-    
+
     model: str
     data: List[Dict[str, Any]]
-    context: Optional[Dict[str, Any]] = None
+    operation_type: OperationType = field(default=OperationType.CREATE, init=False)
+    operation_id: str = field(default_factory=lambda: str(uuid.uuid4()))
+    status: OperationStatus = OperationStatus.PENDING
     priority: int = 0
+    context: Optional[Dict[str, Any]] = None
+    return_ids: bool = True
+
+    # Execution metadata
+    created_at: Optional[float] = None
+    started_at: Optional[float] = None
+    completed_at: Optional[float] = None
+    error: Optional[str] = None
+    result: Optional[Any] = None
 ```
 
 **Example:**
@@ -317,11 +355,16 @@ operation = CreateOperation(
 
 # Get operation info
 print(f"Batch size: {operation.get_batch_size()}")  # 2
-print(f"Can split: {operation.can_split()}")        # True
+print(f"Operation ID: {operation.operation_id}")
+print(f"Status: {operation.status}")
 
 # Split into chunks
 chunks = operation.split(chunk_size=1)
 print(f"Split into {len(chunks)} chunks")
+
+# Check completion status
+print(f"Is completed: {operation.is_completed()}")
+print(f"Is successful: {operation.is_successful()}")
 ```
 
 ### UpdateOperation
@@ -332,12 +375,22 @@ Batch update operation for multiple record updates.
 @dataclass
 class UpdateOperation(BatchOperation):
     """Batch update operation."""
-    
+
     model: str
     data: Union[Dict[str, Any], List[Dict[str, Any]]]
-    record_ids: Optional[List[int]] = None
-    context: Optional[Dict[str, Any]] = None
+    operation_type: OperationType = field(default=OperationType.UPDATE, init=False)
+    operation_id: str = field(default_factory=lambda: str(uuid.uuid4()))
+    status: OperationStatus = OperationStatus.PENDING
     priority: int = 0
+    context: Optional[Dict[str, Any]] = None
+    record_ids: Optional[List[int]] = None
+
+    # Execution metadata
+    created_at: Optional[float] = None
+    started_at: Optional[float] = None
+    completed_at: Optional[float] = None
+    error: Optional[str] = None
+    result: Optional[Any] = None
 ```
 
 **Example:**
@@ -345,14 +398,17 @@ class UpdateOperation(BatchOperation):
 ```python
 from zenoo_rpc.batch.operations import UpdateOperation
 
-# Same data for multiple records
+# Same data for multiple records (bulk update)
 operation1 = UpdateOperation(
     model="res.partner",
     data={"active": True},
     record_ids=[1, 2, 3, 4, 5]
 )
 
-# Different data for each record
+print(f"Is bulk operation: {operation1.is_bulk_operation()}")  # True
+print(f"Batch size: {operation1.get_batch_size()}")  # 5
+
+# Different data for each record (individual updates)
 operation2 = UpdateOperation(
     model="res.partner",
     data=[
@@ -360,6 +416,9 @@ operation2 = UpdateOperation(
         {"id": 2, "name": "Updated Name 2"}
     ]
 )
+
+print(f"Is bulk operation: {operation2.is_bulk_operation()}")  # False
+print(f"Batch size: {operation2.get_batch_size()}")  # 2
 ```
 
 ### DeleteOperation
@@ -370,11 +429,21 @@ Batch delete operation for multiple record deletion.
 @dataclass
 class DeleteOperation(BatchOperation):
     """Batch delete operation."""
-    
+
     model: str
     data: List[int]  # Record IDs to delete
-    context: Optional[Dict[str, Any]] = None
+    operation_type: OperationType = field(default=OperationType.DELETE, init=False)
+    operation_id: str = field(default_factory=lambda: str(uuid.uuid4()))
+    status: OperationStatus = OperationStatus.PENDING
     priority: int = 0
+    context: Optional[Dict[str, Any]] = None
+
+    # Execution metadata
+    created_at: Optional[float] = None
+    started_at: Optional[float] = None
+    completed_at: Optional[float] = None
+    error: Optional[str] = None
+    result: Optional[Any] = None
 ```
 
 **Example:**
@@ -400,15 +469,24 @@ Handles execution of batch operations with performance optimization.
 ```python
 class BatchExecutor:
     """Executes batch operations with optimization."""
-    
+
     def __init__(
         self,
-        client: ZenooClient,
+        client: Any,
         max_chunk_size: int = 100,
         max_concurrency: int = 5,
-        timeout: Optional[float] = None
+        timeout: Optional[int] = None,
+        retry_attempts: int = 3,
     ):
-        """Initialize batch executor."""
+        """Initialize batch executor.
+
+        Args:
+            client: Zenoo RPC client instance
+            max_chunk_size: Maximum records per chunk
+            max_concurrency: Maximum concurrent operations
+            timeout: Operation timeout in seconds
+            retry_attempts: Number of retry attempts for failed operations
+        """
 ```
 
 **Features:**
@@ -441,25 +519,21 @@ async with batch_context(
 
 ### `batch_operation()`
 
-Decorator for batch operations.
+Context manager for single operation type accumulation.
 
 ```python
 from zenoo_rpc.batch.context import batch_operation
 
-@batch_operation(client, auto_execute=True)
-async def create_test_data(batch):
-    """Batch operation decorator."""
-    batch.create("res.partner", [
-        {"name": "Test Company 1"},
-        {"name": "Test Company 2"}
-    ])
-    
-    batch.create("res.users", [
-        {"name": "Test User", "login": "test@user.com"}
-    ])
-
-# Usage
-await create_test_data()
+async with batch_operation(
+    client,
+    model="res.partner",
+    operation_type="create",
+    chunk_size=50
+) as collector:
+    """Accumulate operations of single type."""
+    collector.add({"name": "Test Company 1"})
+    collector.add({"name": "Test Company 2"})
+    # Records are automatically created when context exits
 ```
 
 ## Performance Optimization
@@ -470,13 +544,81 @@ await create_test_data()
 # Automatic chunking for large datasets
 large_dataset = [{"name": f"Company {i}"} for i in range(1000)]
 
-async with batch_manager.batch() as batch_context:
-    # Automatically split into chunks of 100
-    created_ids = await batch_manager.bulk_create(
-        model="res.partner",
-        records=large_dataset,
-        chunk_size=100  # Process in chunks of 100
-    )
+# Automatically split into chunks of 100
+created_ids = await batch_manager.bulk_create(
+    model="res.partner",
+    records=large_dataset,
+    chunk_size=100
+)
+
+print(f"Created {len(created_ids)} records in chunks")
+```
+
+### Concurrency Control
+
+```python
+# Configure optimal concurrency
+batch_manager = BatchManager(
+    client=client,
+    max_chunk_size=50,     # Smaller chunks for better parallelism
+    max_concurrency=10,    # Higher concurrency for speed
+    timeout=120            # Longer timeout for large operations
+)
+
+# Execute with progress tracking
+async def progress_callback(progress):
+    print(f"Progress: {progress['percentage']:.1f}%")
+
+results = await batch_manager.execute_operations(
+    operations,
+    progress_callback=progress_callback
+)
+```
+
+## Summary
+
+The Batch API provides comprehensive tools for efficient bulk operations:
+
+### Key Components
+
+- **BatchManager**: Main interface for batch operations
+- **Batch Operations**: CreateOperation, UpdateOperation, DeleteOperation
+- **BatchExecutor**: Performance-optimized execution engine
+- **Context Managers**: Convenient batch contexts for different use cases
+
+### Usage Patterns
+
+1. **Bulk Operations**: Use `bulk_create()`, `bulk_update()`, `bulk_delete()` for simple bulk operations
+2. **Batch Context**: Use `batch_manager.batch()` for collecting multiple operations
+3. **Manual Batches**: Use `create_batch()` for fine-grained control
+4. **Standalone Context**: Use `batch_context()` for independent batch operations
+
+### Best Practices
+
+- Configure appropriate chunk sizes for your data volume
+- Use concurrency control to balance speed and resource usage
+- Implement progress tracking for long-running operations
+- Handle errors gracefully with proper exception handling
+- Monitor performance and adjust settings as needed
+
+The Batch API makes it easy to perform efficient bulk operations while maintaining excellent performance and reliability.
+
+## Performance Optimization
+
+### Chunking Strategy
+
+```python
+# Automatic chunking for large datasets
+large_dataset = [{"name": f"Company {i}"} for i in range(1000)]
+
+# Automatically split into chunks of 100
+created_ids = await batch_manager.bulk_create(
+    model="res.partner",
+    records=large_dataset,
+    chunk_size=100
+)
+
+print(f"Created {len(created_ids)} records in chunks")
 ```
 
 ### Concurrency Control
@@ -490,22 +632,25 @@ batch_manager = BatchManager(
     timeout=600           # Longer timeout
 )
 
-async with batch_manager.batch() as batch_context:
-    # Operations execute with controlled concurrency
-    created_ids = await batch_manager.bulk_create(
-        model="res.partner",
-        records=very_large_dataset
-    )
+# Use bulk operations for high-performance processing
+created_ids = await batch_manager.bulk_create(
+    model="res.partner",
+    records=very_large_dataset,
+    chunk_size=200
+)
+
+print(f"Created {len(created_ids)} records with high concurrency")
 ```
 
 ### Progress Monitoring
 
 ```python
-def progress_callback(completed, total, current_operation):
+async def progress_callback(progress):
     """Progress callback for monitoring."""
-    percentage = (completed / total) * 100
-    print(f"Progress: {percentage:.1f}% ({completed}/{total})")
-    print(f"Current: {current_operation.operation_type.value} on {current_operation.model}")
+    print(f"Progress: {progress['percentage']:.1f}% "
+          f"({progress['completed']}/{progress['total']})")
+    print(f"Stats: {progress['stats']['completed_operations']} completed, "
+          f"{progress['stats']['failed_operations']} failed")
 
 # Use with progress monitoring
 results = await batch_manager.execute_operations(
@@ -526,18 +671,21 @@ from zenoo_rpc.batch.exceptions import (
 )
 
 try:
+    # Use batch context correctly
     async with batch_manager.batch() as batch_context:
-        await batch_manager.bulk_create("res.partner", invalid_data)
-        
+        await batch_context.create("res.partner", invalid_data)
+
 except BatchExecutionError as e:
     print(f"Batch execution failed: {e}")
-    print(f"Failed operations: {len(e.failed_operations)}")
-    
-    for failed_op in e.failed_operations:
-        print(f"Failed: {failed_op}")
-        
+    # Handle batch execution errors
+
 except BatchValidationError as e:
     print(f"Batch validation failed: {e}")
+    # Handle validation errors
+
+except BatchError as e:
+    print(f"General batch error: {e}")
+    # Handle general batch errors
 ```
 
 ### Partial Results
@@ -546,21 +694,43 @@ except BatchValidationError as e:
 async def safe_batch_operation():
     """Handle partial results in batch operations."""
     try:
-        async with batch_manager.batch() as batch_context:
-            results = await batch_manager.bulk_create(
-                model="res.partner",
-                records=mixed_valid_invalid_data
-            )
-            
-            return results
-            
+        # Use bulk operations directly for better error handling
+        results = await batch_manager.bulk_create(
+            model="res.partner",
+            records=mixed_valid_invalid_data
+        )
+
+        return results
+
     except BatchExecutionError as e:
-        # Some operations may have succeeded
-        if e.partial_results:
-            print(f"Partial success: {len(e.partial_results)} operations completed")
-            return e.partial_results
-        
+        print(f"Batch execution failed: {e}")
+        # Handle batch execution errors
+        # Check if any operations succeeded before the failure
+
         raise
+
+async def safe_batch_with_validation():
+    """Pre-validate data before batch operations."""
+    valid_records = []
+    invalid_records = []
+
+    for record in mixed_data:
+        if record.get('name'):  # Basic validation
+            valid_records.append(record)
+        else:
+            invalid_records.append(record)
+
+    if invalid_records:
+        print(f"Skipping {len(invalid_records)} invalid records")
+
+    if valid_records:
+        results = await batch_manager.bulk_create(
+            model="res.partner",
+            records=valid_records
+        )
+        return results
+
+    return []
 ```
 
 ## Integration with Transactions
@@ -570,24 +740,27 @@ async def safe_batch_operation():
 ```python
 from zenoo_rpc.transaction.manager import TransactionManager
 
-transaction_manager = TransactionManager(client)
+# Setup both managers
+await client.setup_transaction_manager()
+await client.setup_batch_manager()
 
-async with transaction_manager.transaction() as tx:
-    async with batch_manager.batch() as batch_context:
-        # All batch operations are transactional
-        created_ids = await batch_manager.bulk_create(
-            model="res.partner",
-            records=partner_data
-        )
-        
-        await batch_manager.bulk_write(
-            model="res.partner",
-            updates=[
-                {"id": created_ids[0], "data": {"active": True}}
-            ]
-        )
-        
-        # All operations commit together
+# Use transaction with batch operations
+async with client.transaction() as tx:
+    # Create records
+    created_ids = await batch_manager.bulk_create(
+        model="res.partner",
+        records=partner_data
+    )
+
+    # Update records
+    await batch_manager.bulk_update(
+        model="res.partner",
+        data={"active": True},
+        record_ids=created_ids
+    )
+
+    # All operations commit together if no errors
+    # Transaction automatically rolls back on any exception
 ```
 
 ## Best Practices
@@ -611,13 +784,14 @@ async def process_large_dataset(data, batch_size=1000):
     """Process large dataset in manageable batches."""
     for i in range(0, len(data), batch_size):
         batch_data = data[i:i + batch_size]
-        
-        async with batch_manager.batch() as batch_context:
-            created_ids = await batch_manager.bulk_create(
-                model="res.partner",
-                records=batch_data
-            )
-            
+
+        # Use bulk operations directly for large datasets
+        created_ids = await batch_manager.bulk_create(
+            model="res.partner",
+            records=batch_data,
+            chunk_size=100  # Internal chunking
+        )
+
         print(f"Processed batch {i//batch_size + 1}: {len(created_ids)} records")
 ```
 
@@ -626,9 +800,9 @@ async def process_large_dataset(data, batch_size=1000):
 ```python
 # ✅ Good: Monitor progress for long-running operations
 def create_progress_callback(description):
-    def callback(completed, total, operation):
-        percentage = (completed / total) * 100
-        print(f"{description}: {percentage:.1f}% complete")
+    async def callback(progress):
+        print(f"{description}: {progress['percentage']:.1f}% complete "
+              f"({progress['completed']}/{progress['total']})")
     return callback
 
 results = await batch_manager.execute_operations(
@@ -663,11 +837,11 @@ if invalid_data:
     print(f"Skipping {len(invalid_data)} invalid records")
 
 if valid_data:
-    async with batch_manager.batch() as batch_context:
-        created_ids = await batch_manager.bulk_create(
-            model="res.partner",
-            records=valid_data
-        )
+    # Use bulk operations for validated data
+    created_ids = await batch_manager.bulk_create(
+        model="res.partner",
+        records=valid_data
+    )
 ```
 
 ## Next Steps

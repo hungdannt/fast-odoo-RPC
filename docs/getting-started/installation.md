@@ -95,7 +95,7 @@ pip install --upgrade zenoo-rpc
 
 Install specific version:
 ```bash
-pip install zenoo-rpc==0.3.0
+pip install zenoo-rpc==0.1.7
 ```
 
 ### Using Poetry
@@ -103,7 +103,7 @@ pip install zenoo-rpc==0.3.0
 Add to your `pyproject.toml`:
 ```toml
 [tool.poetry.dependencies]
-zenoo-rpc = "^0.3.0"
+zenoo-rpc = "^0.1.7"
 
 # Optional dependencies
 redis = {extras = ["hiredis"], version = "^5.0.0", optional = true}

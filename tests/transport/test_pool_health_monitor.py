@@ -12,7 +12,7 @@ import pytest
 import httpx
 
 from zenoo_rpc.transport.pool import (
-    EnhancedConnectionPool,
+    ConnectionPool,
     PooledConnection,
     ConnectionState,
     ConnectionStats,

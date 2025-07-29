@@ -164,19 +164,28 @@ class LazyRelationship:
                     if rel.is_collection:
                         # Handle collections
                         if isinstance(rel.relation_ids, list):
-                            rel._loaded_data = [
+                            raw_data = [
                                 records_by_id.get(rid)
                                 for rid in rel.relation_ids
                                 if rid in records_by_id
                             ]
+                            # Convert to model instances
+                            rel._loaded_data = rel._convert_to_model_instances(raw_data)
                         else:
                             rel._loaded_data = []
                     else:
                         # Handle single records
                         if isinstance(rel.relation_ids, list) and rel.relation_ids:
-                            rel._loaded_data = records_by_id.get(rel.relation_ids[0])
+                            raw_record = records_by_id.get(rel.relation_ids[0])
                         else:
-                            rel._loaded_data = records_by_id.get(rel.relation_ids)
+                            raw_record = records_by_id.get(rel.relation_ids)
+
+                        # Convert to model instance
+                        if raw_record:
+                            instances = rel._convert_to_model_instances([raw_record])
+                            rel._loaded_data = instances[0] if instances else None
+                        else:
+                            rel._loaded_data = None
                 else:
                     rel._loaded_data = [] if rel.is_collection else None
 
@@ -218,9 +227,8 @@ class LazyRelationship:
                         fields=basic_fields,
                     )
 
-                    # Convert to model instances if we have a model class
-                    # For now, return raw data
-                    self._loaded_data = records_data
+                    # Convert to model instances
+                    self._loaded_data = self._convert_to_model_instances(records_data)
                 else:
                     self._loaded_data = []
             else:
@@ -233,7 +241,12 @@ class LazyRelationship:
                         limit=1,
                     )
 
-                    self._loaded_data = records_data[0] if records_data else None
+                    # Convert to model instance
+                    if records_data:
+                        instances = self._convert_to_model_instances([records_data[0]])
+                        self._loaded_data = instances[0] if instances else None
+                    else:
+                        self._loaded_data = None
                 else:
                     self._loaded_data = None
 
@@ -269,6 +282,79 @@ class LazyRelationship:
             self._loading_task.cancel()
         self._loading_task = None
 
+    def _convert_to_model_instances(self, records_data: List[Dict[str, Any]]) -> List[Any]:
+        """Convert raw record data to model instances.
+
+        Args:
+            records_data: List of raw record dictionaries from Odoo
+
+        Returns:
+            List of model instances
+        """
+        if not records_data:
+            return []
+
+        try:
+            # Try to get the model class from registry
+            from .registry import get_registry
+            registry = get_registry()
+
+            # Try to get registered model class
+            model_class = registry.get_model(self.relation_model)
+            if model_class:
+                # Convert each record to model instance
+                instances = []
+                for record_data in records_data:
+                    # Add client reference for lazy loading
+                    record_data["client"] = self.client
+
+                    # Remove problematic 'self' key if present
+                    if "self" in record_data:
+                        record_data.pop("self", None)
+
+                    # Create model instance
+                    instance = model_class(**record_data)
+                    instances.append(instance)
+
+                return instances
+            else:
+                # Fallback: return raw data if no model class found
+                return records_data
+
+        except Exception as e:
+            # Fallback: return raw data on any error
+            # This ensures lazy loading still works even if model conversion fails
+            return records_data
+
+    async def all(self) -> List[Any]:
+        """Get all items for collection relationships.
+
+        This method provides the same interface as LazyCollection.all()
+        for consistency with the documented API.
+
+        Returns:
+            List of all items for collections, or single item wrapped in list for non-collections
+
+        Raises:
+            ValueError: If this is not a collection relationship
+
+        Examples:
+            >>> # For One2many/Many2many fields (collections)
+            >>> children = await partner.child_ids.all()  # Returns List[ResPartner]
+            >>>
+            >>> # For Many2one fields (single records) - returns single item in list
+            >>> company = await partner.parent_id.all()  # Returns List[ResPartner] with 1 item
+        """
+        # Load the data first
+        data = await self.load()
+
+        if self.is_collection:
+            # For collections, return the list as-is
+            return data if isinstance(data, list) else []
+        else:
+            # For single records, wrap in a list for consistency
+            return [data] if data is not None else []
+
     def __await__(self):
         """Make the relationship awaitable."""
         return self.load().__await__()
@@ -276,7 +362,8 @@ class LazyRelationship:
     def __repr__(self) -> str:
         """String representation of the lazy relationship."""
         status = "loaded" if self._is_loaded else "not loaded"
-        return f"LazyRelationship({self.field_name}, {self.relation_model}, {status})"
+        collection_type = "collection" if self.is_collection else "single"
+        return f"LazyRelationship({self.field_name}, {self.relation_model}, {collection_type}, {status})"
 
 
 class RelationshipManager:

@@ -16,38 +16,65 @@ The `BatchContext` class offers:
 
 ```python
 class BatchContext:
-    """Context manager for batch operations."""
-    
-    def __init__(self, client: ZenooClient, auto_execute: bool = True):
+    """Context for collecting batch operations."""
+
+    def __init__(self, manager: BatchManager):
         """Initialize batch context.
-        
+
         Args:
-            client: Zenoo RPC client instance
-            auto_execute: Whether to auto-execute on context exit
+            manager: Batch manager instance
         """
-        self.client = client
-        self.auto_execute = auto_execute
+        self.manager = manager
         self.operations = []
-        self.results = []
-    
-    async def __aenter__(self):
-        """Enter batch context."""
-        return self
-    
-    async def __aexit__(self, exc_type, exc_val, exc_tb):
-        """Exit batch context and execute operations."""
-        if self.auto_execute and not exc_type:
-            await self.execute()
-    
-    def create(self, model: str, data: Dict[str, Any]):
-        """Add create operation to batch."""
+        self._stats = {
+            "total_operations": 0,
+            "completed_operations": 0,
+            "failed_operations": 0,
+        }
+
+    async def create(
+        self,
+        model: str,
+        data: List[Dict[str, Any]],
+        context: Optional[Dict[str, Any]] = None,
+    ):
+        """Add create operation to batch.
+
+        Args:
+            model: Odoo model name
+            data: List of record data
+            context: Optional context
+        """
         pass
-    
-    def update(self, model: str, data: Dict[str, Any], ids: List[int]):
-        """Add update operation to batch."""
+
+    async def write_many(
+        self,
+        model: str,
+        updates: List[Dict[str, Any]],
+        context: Optional[Dict[str, Any]] = None,
+    ):
+        """Add write operations to batch.
+
+        Args:
+            model: Odoo model name
+            updates: List of update operations
+            context: Optional context
+        """
         pass
-    
-    def delete(self, model: str, ids: List[int]):
+
+    async def unlink(
+        self,
+        model: str,
+        record_ids: List[int],
+        context: Optional[Dict[str, Any]] = None,
+    ):
+        """Add unlink operation to batch.
+
+        Args:
+            model: Odoo model name
+            record_ids: List of record IDs to delete
+            context: Optional context
+        """
         """Add delete operation to batch."""
         pass
     
@@ -63,34 +90,46 @@ class BatchContext:
 ```python
 async def basic_batch_context():
     """Demonstrate basic batch context usage."""
-    
+
     async with ZenooClient("localhost", port=8069) as client:
         await client.login("demo", "admin", "admin")
-        
+
+        # Setup batch manager
+        await client.setup_batch_manager()
+
         # Operations are automatically executed on context exit
         async with client.batch() as batch:
-            # Add operations
-            batch.create("res.partner", {"name": "Partner 1", "email": "p1@example.com"})
-            batch.create("res.partner", {"name": "Partner 2", "email": "p2@example.com"})
-            batch.create("product.product", {"name": "Product 1", "list_price": 10.0})
-        
+            # Add operations (note: create expects list of records)
+            await batch.create("res.partner", [
+                {"name": "Partner 1", "email": "p1@example.com"},
+                {"name": "Partner 2", "email": "p2@example.com"}
+            ])
+            await batch.create("product.product", [
+                {"name": "Product 1", "list_price": 10.0}
+            ])
+
         # Operations are executed here automatically
         print("Batch operations completed")
 
-async def manual_batch_execution():
-    """Demonstrate manual batch execution."""
-    
+async def standalone_batch_context():
+    """Demonstrate standalone batch context usage."""
+
+    from zenoo_rpc.batch.context import batch_context
+
     async with ZenooClient("localhost", port=8069) as client:
         await client.login("demo", "admin", "admin")
-        
-        # Disable auto-execution
-        async with BatchContext(client, auto_execute=False) as batch:
-            batch.create("res.partner", {"name": "Manual Partner"})
-            batch.create("product.product", {"name": "Manual Product"})
-            
-            # Execute manually
-            results = await batch.execute()
-            print(f"Created {len(results)} records manually")
+
+        # Use standalone batch context
+        async with batch_context(client, max_chunk_size=100) as batch:
+            batch.create("res.partner", [
+                {"name": "Standalone Partner 1"},
+                {"name": "Standalone Partner 2"}
+            ])
+            batch.update("res.partner", {"active": False}, record_ids=[1, 2, 3])
+
+            # Batch is automatically executed when context exits
+
+        print("Standalone batch operations completed")
 ```
 
 ### Error Handling
@@ -98,248 +137,295 @@ async def manual_batch_execution():
 ```python
 async def batch_with_error_handling():
     """Demonstrate error handling in batch context."""
-    
+
+    from zenoo_rpc.batch.exceptions import BatchError
+
     async with ZenooClient("localhost", port=8069) as client:
         await client.login("demo", "admin", "admin")
-        
+
+        await client.setup_batch_manager()
+
         try:
             async with client.batch() as batch:
-                batch.create("res.partner", {"name": "Valid Partner"})
-                batch.create("res.partner", {})  # Invalid - missing name
-                batch.create("res.partner", {"name": "Another Partner"})
-                
-                # If an error occurs, the context will handle it
-                
-        except BatchExecutionError as e:
-            print(f"Batch failed: {e}")
-            print(f"Successful operations: {e.successful_count}")
-            
-            # Handle partial results
-            for i, result in enumerate(e.partial_results):
-                if result.success:
-                    print(f"Operation {i}: Success - ID {result.data.id}")
-                else:
-                    print(f"Operation {i}: Failed - {result.error}")
+                # Valid operations
+                await batch.create("res.partner", [
+                    {"name": "Valid Partner 1"},
+                    {"name": "Valid Partner 2"}
+                ])
 
-async def batch_with_rollback():
-    """Demonstrate batch rollback on error."""
-    
+                # This might fail due to validation
+                await batch.create("res.partner", [
+                    {"name": ""},  # Invalid - empty name
+                ])
+
+        except BatchError as e:
+            print(f"Batch failed: {e}")
+            # Handle batch execution errors
+
+        except Exception as e:
+            print(f"Unexpected error: {e}")
+
+async def batch_with_transaction():
+    """Demonstrate batch with transaction support."""
+
     async with ZenooClient("localhost", port=8069) as client:
         await client.login("demo", "admin", "admin")
-        
-        class RollbackBatchContext(BatchContext):
-            """Batch context with rollback capability."""
-            
-            def __init__(self, client: ZenooClient):
-                super().__init__(client, auto_execute=False)
-                self.created_ids = []
-            
-            async def execute_with_rollback(self):
-                """Execute with automatic rollback on failure."""
-                try:
-                    results = await self.execute()
-                    
-                    # Track created records for potential rollback
-                    for result in results:
-                        if hasattr(result, 'id'):
-                            self.created_ids.append((result._model_name, result.id))
-                    
-                    return results
-                    
-                except Exception as e:
-                    # Rollback created records
-                    await self.rollback()
-                    raise
-            
-            async def rollback(self):
-                """Rollback created records."""
-                for model_name, record_id in reversed(self.created_ids):
-                    try:
-                        await self.client.model(model_name).filter(id=record_id).delete()
-                        print(f"Rolled back {model_name} ID {record_id}")
-                    except Exception as rollback_error:
-                        print(f"Rollback failed for {model_name} ID {record_id}: {rollback_error}")
-        
-        async with RollbackBatchContext(client) as batch:
-            batch.create("res.partner", {"name": "Partner 1"})
-            batch.create("res.partner", {"name": "Partner 2"})
-            
-            try:
-                await batch.execute_with_rollback()
-                print("Batch completed successfully")
-            except Exception as e:
-                print(f"Batch failed and rolled back: {e}")
+
+        # Setup both transaction and batch managers
+        await client.setup_transaction_manager()
+        await client.setup_batch_manager()
+
+        try:
+            # Use transaction for rollback capability
+            async with client.transaction() as tx:
+                async with client.batch() as batch:
+                    await batch.create("res.partner", [
+                        {"name": "Transactional Partner 1"},
+                        {"name": "Transactional Partner 2"}
+                    ])
+
+                    # If any operation fails, transaction will rollback
+                    await batch.write_many("res.partner", [
+                        {"id": 1, "values": {"active": False}},
+                        {"id": 2, "values": {"active": False}}
+                    ])
+
+                # Transaction commits automatically if no errors
+                print("Batch operations committed successfully")
+
+        except Exception as e:
+            print(f"Transaction rolled back due to error: {e}")
 ```
 
 ### Advanced Context Features
 
 ```python
-class AdvancedBatchContext(BatchContext):
-    """Advanced batch context with additional features."""
-    
-    def __init__(self, client: ZenooClient, batch_size: int = 100, parallel: bool = False):
-        super().__init__(client)
-        self.batch_size = batch_size
-        self.parallel = parallel
-        self.operation_groups = []
-    
-    async def execute_in_chunks(self) -> List[Any]:
-        """Execute operations in chunks."""
-        
-        all_results = []
-        
-        # Split operations into chunks
-        for i in range(0, len(self.operations), self.batch_size):
-            chunk = self.operations[i:i + self.batch_size]
-            
-            if self.parallel:
-                # Execute chunks in parallel
-                chunk_results = await self._execute_parallel_chunk(chunk)
-            else:
-                # Execute chunks sequentially
-                chunk_results = await self._execute_sequential_chunk(chunk)
-            
-            all_results.extend(chunk_results)
-        
-        return all_results
-    
-    async def _execute_parallel_chunk(self, operations: List[BatchOperation]) -> List[Any]:
-        """Execute chunk operations in parallel."""
-        
-        # Group operations by type for parallel execution
-        create_ops = [op for op in operations if isinstance(op, CreateOperation)]
-        update_ops = [op for op in operations if isinstance(op, UpdateOperation)]
-        delete_ops = [op for op in operations if isinstance(op, DeleteOperation)]
-        
-        tasks = []
-        if create_ops:
-            tasks.append(self._execute_create_operations(create_ops))
-        if update_ops:
-            tasks.append(self._execute_update_operations(update_ops))
-        if delete_ops:
-            tasks.append(self._execute_delete_operations(delete_ops))
-        
-        if tasks:
-            results = await asyncio.gather(*tasks, return_exceptions=True)
-            # Flatten results
-            flattened_results = []
-            for result in results:
-                if isinstance(result, list):
-                    flattened_results.extend(result)
-                elif not isinstance(result, Exception):
-                    flattened_results.append(result)
-            return flattened_results
-        
-        return []
-    
-    async def _execute_sequential_chunk(self, operations: List[BatchOperation]) -> List[Any]:
-        """Execute chunk operations sequentially."""
-        
-        results = []
-        for operation in operations:
-            try:
-                result = await operation.execute(self.client)
-                results.append(result)
-            except Exception as e:
-                # Handle individual operation errors
-                results.append(BatchOperationResult(success=False, error=str(e)))
-        
-        return results
+async def batch_with_progress_tracking():
+    """Demonstrate batch operations with progress tracking."""
 
-# Usage of advanced context
-async def advanced_batch_example():
-    """Demonstrate advanced batch context features."""
-    
+    from zenoo_rpc.batch.context import batch_context
+
+    async def progress_callback(progress):
+        """Progress callback function."""
+        print(f"Progress: {progress['percentage']:.1f}% "
+              f"({progress['completed']}/{progress['total']})")
+
     async with ZenooClient("localhost", port=8069) as client:
         await client.login("demo", "admin", "admin")
-        
-        # Large batch with chunking and parallel execution
-        async with AdvancedBatchContext(client, batch_size=50, parallel=True) as batch:
-            
+
+        # Use batch context with progress tracking
+        async with batch_context(
+            client,
+            max_chunk_size=50,
+            max_concurrency=3,
+            progress_callback=progress_callback
+        ) as batch:
+
             # Add many operations
-            for i in range(500):
-                batch.create("res.partner", {
-                    "name": f"Bulk Partner {i}",
-                    "email": f"bulk{i}@example.com"
-                })
-            
-            for i in range(200):
-                batch.create("product.product", {
-                    "name": f"Bulk Product {i}",
-                    "list_price": 10.0 + (i * 0.5)
-                })
-            
-            # Operations will be executed in chunks with parallel processing
-            results = await batch.execute_in_chunks()
-            print(f"Bulk operations completed: {len(results)} records created")
+            partners_data = [
+                {"name": f"Bulk Partner {i}", "email": f"partner{i}@example.com"}
+                for i in range(200)
+            ]
+            batch.create("res.partner", partners_data)
+
+            # Update operations
+            batch.update("res.partner", {"active": True}, record_ids=list(range(1, 51)))
+
+            # Operations will be executed with progress reporting
+
+async def batch_with_chunking():
+    """Demonstrate batch operations with custom chunking."""
+
+    async with ZenooClient("localhost", port=8069) as client:
+        await client.login("demo", "admin", "admin")
+
+        # Setup batch manager with custom settings
+        batch_manager = await client.setup_batch_manager(
+            max_chunk_size=25,  # Smaller chunks
+            max_concurrency=2,  # Limited concurrency
+            timeout=60
+        )
+
+        # Large dataset
+        large_dataset = [
+            {"name": f"Product {i}", "list_price": 10.0 + i}
+            for i in range(500)
+        ]
+
+        # Use bulk operations with chunking
+        created_ids = await batch_manager.bulk_create(
+            model="product.product",
+            records=large_dataset,
+            chunk_size=25
+        )
+
+        print(f"Created {len(created_ids)} products in chunks")
 ```
 
-### Context with Validation
+### Batch Operation Context
 
 ```python
-class ValidatedBatchContext(BatchContext):
-    """Batch context with operation validation."""
-    
-    def __init__(self, client: ZenooClient, validate_before_execute: bool = True):
-        super().__init__(client)
-        self.validate_before_execute = validate_before_execute
-        self.validation_errors = []
-    
-    def create(self, model: str, data: Dict[str, Any]):
-        """Add create operation with validation."""
-        
-        if self.validate_before_execute:
-            validation_error = self._validate_create_data(model, data)
-            if validation_error:
-                self.validation_errors.append(validation_error)
-                return
-        
-        super().create(model, data)
-    
-    def _validate_create_data(self, model: str, data: Dict[str, Any]) -> Optional[str]:
-        """Validate create operation data."""
-        
-        # Basic validation rules
-        if model == "res.partner":
-            if not data.get("name"):
-                return "Partner name is required"
-            if data.get("email") and "@" not in data["email"]:
-                return "Invalid email format"
-        
-        elif model == "product.product":
-            if not data.get("name"):
-                return "Product name is required"
-            if data.get("list_price") and data["list_price"] < 0:
-                return "Product price cannot be negative"
-        
-        return None
-    
-    async def execute(self) -> List[Any]:
-        """Execute with pre-validation check."""
-        
-        if self.validation_errors:
-            raise ValidationError(f"Validation failed: {self.validation_errors}")
-        
-        return await super().execute()
+async def batch_operation_context_example():
+    """Demonstrate batch operation context for single operations."""
 
-# Usage with validation
-async def validated_batch_example():
-    """Demonstrate batch context with validation."""
-    
+    from zenoo_rpc.batch.context import batch_operation
+
     async with ZenooClient("localhost", port=8069) as client:
         await client.login("demo", "admin", "admin")
-        
-        try:
-            async with ValidatedBatchContext(client) as batch:
-                batch.create("res.partner", {"name": "Valid Partner", "email": "valid@example.com"})
-                batch.create("res.partner", {"email": "invalid-email"})  # Missing name
-                batch.create("product.product", {"name": "Valid Product", "list_price": 10.0})
-                batch.create("product.product", {"list_price": -5.0})  # Missing name, negative price
-                
-        except ValidationError as e:
-            print(f"Validation failed: {e}")
-            print("Please fix validation errors and try again")
+
+        # Use batch operation context for accumulating create operations
+        async with batch_operation(
+            client,
+            model="res.partner",
+            operation_type="create",
+            chunk_size=50
+        ) as collector:
+
+            # Add records one by one
+            for i in range(100):
+                collector.add({
+                    "name": f"Batch Partner {i}",
+                    "email": f"batch{i}@example.com",
+                    "is_company": i % 10 == 0  # Every 10th is a company
+                })
+
+            # Records are automatically created when context exits
+
+        print("Batch operation context completed")
+
+async def mixed_batch_operations():
+    """Demonstrate mixed batch operations."""
+
+    async with ZenooClient("localhost", port=8069) as client:
+        await client.login("demo", "admin", "admin")
+
+        await client.setup_batch_manager(max_chunk_size=50, max_concurrency=3)
+
+        async with client.batch() as batch:
+            # Create new partners
+            await batch.create("res.partner", [
+                {"name": "Batch Company A", "is_company": True},
+                {"name": "Batch Company B", "is_company": True},
+                {"name": "Batch Company C", "is_company": True}
+            ])
+
+            # Update existing partners
+            await batch.write_many("res.partner", [
+                {"id": 1, "values": {"phone": "+1-555-0001"}},
+                {"id": 2, "values": {"phone": "+1-555-0002"}},
+                {"id": 3, "values": {"phone": "+1-555-0003"}}
+            ])
+
+            # Delete inactive partners (if any exist)
+            inactive_ids = await client.search("res.partner", [("active", "=", False)])
+            if inactive_ids:
+                await batch.unlink("res.partner", inactive_ids[:10])  # Limit to 10
+
+        print("Mixed batch operations completed")
 ```
+
+## Best Practices
+
+### Performance Optimization
+
+```python
+async def optimized_batch_operations():
+    """Demonstrate performance-optimized batch operations."""
+
+    async with ZenooClient("localhost", port=8069) as client:
+        await client.login("demo", "admin", "admin")
+
+        # Configure batch manager for optimal performance
+        batch_manager = await client.setup_batch_manager(
+            max_chunk_size=100,    # Larger chunks for better throughput
+            max_concurrency=5,     # Balanced concurrency
+            timeout=120            # Longer timeout for large operations
+        )
+
+        # Use bulk operations for large datasets
+        large_dataset = [
+            {
+                "name": f"Optimized Partner {i}",
+                "email": f"opt{i}@example.com",
+                "is_company": i % 20 == 0,
+                "phone": f"+1-555-{i:04d}"
+            }
+            for i in range(1000)
+        ]
+
+        # Bulk create with optimal chunk size
+        created_ids = await batch_manager.bulk_create(
+            model="res.partner",
+            records=large_dataset,
+            chunk_size=100
+        )
+
+        print(f"Created {len(created_ids)} partners efficiently")
+
+### Error Recovery
+
+```python
+async def batch_with_error_recovery():
+    """Demonstrate batch operations with error recovery."""
+
+    async with ZenooClient("localhost", port=8069) as client:
+        await client.login("demo", "admin", "admin")
+
+        await client.setup_batch_manager()
+
+        # Prepare data with some intentionally invalid records
+        mixed_data = [
+            {"name": "Valid Partner 1", "email": "valid1@example.com"},
+            {"name": "", "email": "invalid@example.com"},  # Invalid: empty name
+            {"name": "Valid Partner 2", "email": "valid2@example.com"},
+            {"name": "Valid Partner 3", "email": "invalid-email"},  # Invalid: bad email
+            {"name": "Valid Partner 4", "email": "valid4@example.com"}
+        ]
+
+        # Filter valid records before batch operation
+        valid_records = []
+        for record in mixed_data:
+            if record.get("name") and "@" in record.get("email", ""):
+                valid_records.append(record)
+            else:
+                print(f"Skipping invalid record: {record}")
+
+        # Process only valid records
+        if valid_records:
+            async with client.batch() as batch:
+                await batch.create("res.partner", valid_records)
+
+            print(f"Successfully processed {len(valid_records)} valid records")
+```
+
+## Summary
+
+The batch context provides powerful capabilities for managing bulk operations in Zenoo RPC:
+
+### Key Features
+
+- **Automatic Execution**: Operations are executed when the context exits
+- **Transaction Support**: Integration with transaction manager for rollback capability
+- **Progress Tracking**: Monitor progress of large batch operations
+- **Error Handling**: Robust error handling with partial results
+- **Performance Optimization**: Chunking and concurrency control
+
+### Usage Patterns
+
+1. **Simple Batching**: Use `client.batch()` for basic batch operations
+2. **Standalone Context**: Use `batch_context()` for more control
+3. **Single Operations**: Use `batch_operation()` for accumulating single operation types
+4. **Bulk Operations**: Use `BatchManager.bulk_*()` methods for large datasets
+
+### Best Practices
+
+- Configure appropriate chunk sizes for your data volume
+- Use transaction contexts for operations requiring rollback capability
+- Implement progress tracking for long-running operations
+- Validate data before batch operations to avoid partial failures
+- Monitor performance and adjust concurrency settings as needed
+
+The batch context makes it easy to perform efficient bulk operations while maintaining data consistency and providing excellent error handling capabilities.
 
 ## Best Practices
 

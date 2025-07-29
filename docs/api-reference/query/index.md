@@ -22,25 +22,18 @@ Factory class for creating QuerySet instances.
 from zenoo_rpc.query.builder import QueryBuilder
 from zenoo_rpc.models.common import ResPartner
 
-class QueryBuilder:
-    """Main query builder interface."""
-    
-    def __init__(self, model_class: Type[T], client: ZenooClient):
-        self.model_class = model_class
-        self.client = client
+# QueryBuilder is created automatically by client.model()
+builder = client.model(ResPartner)
 ```
 
 **Methods:**
 
 ```python
-# Get all records (returns QuerySet)
-def all() -> QuerySet[T]
-
-# Filter records
+# Filter records (returns QuerySet)
 def filter(*args, **kwargs) -> QuerySet[T]
 
-# Exclude records
-def exclude(*args, **kwargs) -> QuerySet[T]
+# Get specific record by ID
+async def get(id: int) -> T
 ```
 
 **Usage:**
@@ -289,11 +282,11 @@ partners = await client.model(ResPartner).order_by(
 ).all()
 ```
 
-## Pagination
+## Pagination (QuerySet Methods)
 
 ### `limit(count)`
 
-Limit number of results.
+Limit number of results. **Note**: This is a QuerySet method, not QueryBuilder.
 
 **Parameters:**
 
@@ -303,7 +296,7 @@ Limit number of results.
 
 ### `offset(count)`
 
-Skip number of results.
+Skip number of results. **Note**: This is a QuerySet method, not QueryBuilder.
 
 **Parameters:**
 
@@ -456,7 +449,7 @@ partners = await client.model(ResPartner).filter(
 
 ### `async first()`
 
-Get first result or None.
+Get first result or None. **Note**: This is a QuerySet method, not QueryBuilder.
 
 **Returns:** `Optional[T]` - First model instance or None
 

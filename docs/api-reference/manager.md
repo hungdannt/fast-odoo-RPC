@@ -16,56 +16,58 @@ Manager classes provide high-level interfaces for:
 
 ```python
 class TransactionManager:
-    """Manages database transactions and savepoints."""
-    
+    """Manages transactions for a Zenoo RPC client."""
+
     def __init__(self, client: ZenooClient):
-        """Initialize transaction manager.
-        
+        """Initialize the transaction manager.
+
         Args:
             client: Zenoo RPC client instance
         """
         self.client = client
         self.active_transactions = {}
-        self.transaction_counter = 0
-    
-    async def begin_transaction(self, isolation_level: str = None) -> Transaction:
-        """Begin a new transaction.
-        
+        self.current_transaction = None
+        self.successful_transactions = 0
+        self.failed_transactions = 0
+
+    @asynccontextmanager
+    async def transaction(self, transaction_id: str = None, auto_commit: bool = True):
+        """Create a new transaction context.
+
         Args:
-            isolation_level: Transaction isolation level
-            
-        Returns:
+            transaction_id: Optional transaction identifier
+            auto_commit: Whether to auto-commit on success
+
+        Yields:
             Transaction instance
         """
+        # Implementation details...
         pass
-    
-    async def commit_transaction(self, transaction_id: str):
-        """Commit a transaction.
-        
-        Args:
-            transaction_id: ID of transaction to commit
-        """
-        pass
-    
-    async def rollback_transaction(self, transaction_id: str):
-        """Rollback a transaction.
-        
-        Args:
-            transaction_id: ID of transaction to rollback
-        """
-        pass
-    
-    async def create_savepoint(self, transaction_id: str, savepoint_name: str) -> str:
-        """Create a savepoint within a transaction.
-        
-        Args:
-            transaction_id: ID of parent transaction
-            savepoint_name: Name for the savepoint
-            
+
+    def get_current_transaction(self) -> Optional[Transaction]:
+        """Get the current active transaction.
+
         Returns:
-            Savepoint ID
+            Current transaction or None
         """
-        pass
+        return self.current_transaction
+
+    def get_transaction(self, transaction_id: str) -> Optional[Transaction]:
+        """Get a transaction by ID.
+
+        Args:
+            transaction_id: Transaction identifier
+
+        Returns:
+            Transaction instance or None
+        """
+        return self.active_transactions.get(transaction_id)
+
+    async def rollback_all(self) -> None:
+        """Rollback all active transactions."""
+        for transaction in list(self.active_transactions.values()):
+            if transaction.is_active:
+                await transaction.rollback()
 ```
 
 ### Usage Examples
@@ -73,42 +75,54 @@ class TransactionManager:
 ```python
 async def use_transaction_manager():
     """Demonstrate transaction manager usage."""
-    
+
     async with ZenooClient("localhost", port=8069) as client:
         await client.login("demo", "admin", "admin")
-        
-        tx_manager = TransactionManager(client)
-        
-        # Begin transaction
-        tx = await tx_manager.begin_transaction()
-        
-        try:
-            # Perform operations
-            partner = await client.model("res.partner").create({
+
+        # Setup transaction manager
+        await client.setup_transaction_manager()
+
+        # Use transaction context manager (recommended)
+        async with client.transaction() as tx:
+            # Perform operations within transaction
+            partner_id = await client.create("res.partner", {
                 "name": "Managed Transaction Partner"
             })
-            
-            # Create savepoint
-            savepoint = await tx_manager.create_savepoint(tx.id, "after_partner")
-            
+
+            # Create savepoint within transaction
+            savepoint_id = await tx.create_savepoint("after_partner")
+
             try:
-                product = await client.model("product.product").create({
+                product_id = await client.create("product.product", {
                     "name": "Managed Transaction Product"
                 })
-                
-                # Commit transaction
-                await tx_manager.commit_transaction(tx.id)
+
+                # Transaction auto-commits on success
                 print("Transaction committed successfully")
-                
+
             except Exception as e:
                 # Rollback to savepoint
-                await tx_manager.rollback_to_savepoint(tx.id, savepoint)
+                await tx.rollback_to_savepoint(savepoint_id)
                 print(f"Rolled back to savepoint: {e}")
-                
-        except Exception as e:
-            # Rollback entire transaction
-            await tx_manager.rollback_transaction(tx.id)
-            print(f"Transaction rolled back: {e}")
+
+# Alternative: Direct transaction manager access
+async def use_transaction_manager_direct():
+    """Direct transaction manager usage."""
+
+    async with ZenooClient("localhost", port=8069) as client:
+        await client.login("demo", "admin", "admin")
+
+        # Setup and get transaction manager
+        tx_manager = await client.setup_transaction_manager()
+
+        # Use transaction manager directly
+        async with tx_manager.transaction() as tx:
+            partner_id = await client.create("res.partner", {
+                "name": "Direct Transaction Partner"
+            })
+
+            # Transaction auto-commits on success
+            print(f"Created partner: {partner_id}")
 ```
 
 ## CacheManager
@@ -117,157 +131,251 @@ async def use_transaction_manager():
 
 ```python
 class CacheManager:
-    """Manages caching operations and backends."""
-    
-    def __init__(self, client: ZenooClient):
-        """Initialize cache manager.
-        
-        Args:
-            client: Zenoo RPC client instance
-        """
-        self.client = client
+    """Main cache manager for Zenoo RPC."""
+
+    def __init__(self):
+        """Initialize cache manager."""
         self.backends = {}
-        self.default_backend = None
-        self.cache_stats = CacheStats()
-    
-    def add_backend(self, name: str, backend: CacheBackend, is_default: bool = False):
-        """Add a cache backend.
-        
+        self.strategies = {}
+        self.default_backend = "memory"
+        self.default_strategy = "ttl"
+        self.config = {
+            "enabled": True,
+            "default_ttl": 300,
+            "max_key_length": 250,
+            "namespace": "zenoo_rpc",
+        }
+        self.stats = {
+            "total_gets": 0,
+            "total_sets": 0,
+            "total_deletes": 0,
+            "total_hits": 0,
+            "total_misses": 0,
+        }
+
+    async def setup_memory_cache(
+        self,
+        name: str = "memory",
+        max_size: int = 1000,
+        default_ttl: int = None,
+        strategy: str = "ttl"
+    ) -> None:
+        """Setup in-memory cache backend.
+
         Args:
             name: Backend name
-            backend: Cache backend instance
-            is_default: Whether this is the default backend
+            max_size: Maximum cache size
+            default_ttl: Default TTL in seconds
+            strategy: Cache strategy ("ttl", "lru", "lfu")
         """
         pass
-    
-    async def get(self, key: str, backend_name: str = None) -> Any:
+
+    async def setup_redis_cache(
+        self,
+        name: str = "redis",
+        url: str = "redis://localhost:6379/0",
+        namespace: str = None,
+        serializer: str = "json",
+        strategy: str = "ttl",
+        **kwargs
+    ) -> None:
+        """Setup Redis cache backend.
+
+        Args:
+            name: Backend name
+            url: Redis connection URL
+            namespace: Cache namespace
+            serializer: Serialization method
+            strategy: Cache strategy
+            **kwargs: Additional Redis parameters
+        """
+        pass
+
+    async def get(self, key: Union[str, CacheKey], backend: str = None) -> Any:
         """Get value from cache.
-        
+
         Args:
             key: Cache key
-            backend_name: Specific backend to use
-            
+            backend: Backend name (uses default if None)
+
         Returns:
             Cached value or None
         """
         pass
-    
-    async def set(self, key: str, value: Any, ttl: int = None, backend_name: str = None):
+
+    async def set(
+        self,
+        key: Union[str, CacheKey],
+        value: Any,
+        ttl: int = None,
+        backend: str = None
+    ) -> bool:
         """Set value in cache.
-        
+
         Args:
             key: Cache key
             value: Value to cache
             ttl: Time to live in seconds
-            backend_name: Specific backend to use
+            backend: Backend name (uses default if None)
+
+        Returns:
+            True if successful
         """
         pass
-    
-    async def invalidate(self, pattern: str = None, backend_name: str = None):
-        """Invalidate cache entries.
-        
+
+    async def delete(self, key: Union[str, CacheKey], backend: str = None) -> bool:
+        """Delete value from cache.
+
         Args:
-            pattern: Key pattern to invalidate
-            backend_name: Specific backend to use
+            key: Cache key
+            backend: Backend name (uses default if None)
+
+        Returns:
+            True if successful
         """
         pass
-    
+
+    async def clear(self, backend: str = None) -> bool:
+        """Clear cache.
+
+        Args:
+            backend: Backend name (clears all if None)
+
+        Returns:
+            True if successful
+        """
+        pass
+
     def get_stats(self) -> Dict[str, Any]:
         """Get cache statistics.
-        
+
         Returns:
             Cache statistics dictionary
         """
-        pass
+        return self.stats
 ```
 
 ### Usage Examples
 
 ```python
-from zenoo_rpc.cache.backends import MemoryBackend, RedisBackend
-
 async def use_cache_manager():
     """Demonstrate cache manager usage."""
-    
+
     async with ZenooClient("localhost", port=8069) as client:
         await client.login("demo", "admin", "admin")
-        
-        cache_manager = CacheManager(client)
-        
-        # Add cache backends
-        memory_backend = MemoryBackend(max_size=1000)
-        redis_backend = RedisBackend("redis://localhost:6379")
-        
-        cache_manager.add_backend("memory", memory_backend, is_default=True)
-        cache_manager.add_backend("redis", redis_backend)
-        
+
+        # Setup cache manager (recommended)
+        cache_manager = await client.setup_cache_manager(
+            backend="memory",
+            max_size=1000,
+            ttl=300
+        )
+
+        # Or setup additional backends manually
+        await cache_manager.setup_redis_cache(
+            name="redis",
+            url="redis://localhost:6379/0",
+            namespace="zenoo_rpc"
+        )
+
         # Cache operations
         await cache_manager.set("partner_1", {"name": "Cached Partner"}, ttl=300)
-        
+
         # Get from cache
         cached_data = await cache_manager.get("partner_1")
         print(f"Cached data: {cached_data}")
-        
+
         # Use specific backend
-        await cache_manager.set("redis_key", {"data": "Redis data"}, backend_name="redis")
-        
+        await cache_manager.set("redis_key", {"data": "Redis data"}, backend="redis")
+
         # Get cache statistics
-        stats = cache_manager.get_stats()
+        stats = await cache_manager.get_stats()
         print(f"Cache stats: {stats}")
-        
-        # Invalidate cache
-        await cache_manager.invalidate("partner_*")
+
+        # Invalidate cache patterns
+        await cache_manager.invalidate_pattern("partner_*")
+
+        # Invalidate all cache for a model
+        await cache_manager.invalidate_model("res.partner")
+
+        # Clear all cache
+        await cache_manager.clear()
+
+# Alternative: Direct cache manager setup
+async def use_cache_manager_direct():
+    """Direct cache manager setup."""
+
+    from zenoo_rpc.cache.manager import CacheManager
+
+    cache_manager = CacheManager()
+
+    # Setup memory cache
+    await cache_manager.setup_memory_cache(
+        name="memory",
+        max_size=1000,
+        default_ttl=300
+    )
+
+    # Use cache
+    await cache_manager.set("test_key", {"data": "test"})
+    result = await cache_manager.get("test_key")
+    print(f"Cached result: {result}")
 ```
 
-## ConnectionManager
+## ConnectionPool
 
 ### Class Reference
 
 ```python
-class ConnectionManager:
-    """Manages client connections and connection pooling."""
-    
-    def __init__(self, max_connections: int = 10):
-        """Initialize connection manager.
-        
+class ConnectionPool:
+    """Connection pool with HTTP/2 support and health monitoring."""
+
+    def __init__(
+        self,
+        base_url: str,
+        pool_size: int = 10,
+        max_connections: int = 20,
+        http2: bool = True,
+        timeout: float = 30.0,
+        health_check_interval: float = 30.0,
+        max_error_rate: float = 10.0,
+        connection_ttl: float = 300.0,
+    ):
+        """Initialize connection pool.
+
         Args:
-            max_connections: Maximum number of concurrent connections
+            base_url: Base URL for connections
+            pool_size: Target pool size
+            max_connections: Maximum connections
+            http2: Enable HTTP/2 support
+            timeout: Request timeout
+            health_check_interval: Health check interval in seconds
+            max_error_rate: Maximum error rate percentage
+            connection_ttl: Connection time-to-live in seconds
         """
-        self.max_connections = max_connections
-        self.active_connections = {}
-        self.connection_pool = []
-        self.connection_counter = 0
-    
-    async def get_connection(self, host: str, port: int, **kwargs) -> ZenooClient:
+        pass
+
+    async def initialize(self) -> None:
+        """Initialize the connection pool."""
+        pass
+
+    def get_connection(self) -> "ConnectionContext":
         """Get a connection from the pool.
-        
-        Args:
-            host: Odoo server host
-            port: Odoo server port
-            **kwargs: Additional connection parameters
-            
+
         Returns:
-            ZenooClient instance
+            Connection context manager
         """
         pass
-    
-    async def release_connection(self, connection: ZenooClient):
-        """Release a connection back to the pool.
-        
-        Args:
-            connection: Connection to release
-        """
+
+    async def close(self) -> None:
+        """Close all connections in the pool."""
         pass
-    
-    async def close_all_connections(self):
-        """Close all active connections."""
-        pass
-    
-    def get_connection_stats(self) -> Dict[str, Any]:
-        """Get connection statistics.
-        
+
+    def get_stats(self) -> Dict[str, Any]:
+        """Get pool statistics.
+
         Returns:
-            Connection statistics dictionary
+            Pool statistics dictionary
         """
         pass
 ```
@@ -275,164 +383,209 @@ class ConnectionManager:
 ### Usage Examples
 
 ```python
-async def use_connection_manager():
-    """Demonstrate connection manager usage."""
-    
-    conn_manager = ConnectionManager(max_connections=5)
-    
+from zenoo_rpc.transport.pool import ConnectionPool
+
+async def use_connection_pool():
+    """Demonstrate connection pool usage."""
+
+    # Create connection pool
+    pool = ConnectionPool(
+        base_url="http://localhost:8069",
+        pool_size=5,
+        max_connections=10,
+        http2=True,
+        timeout=30.0
+    )
+
     try:
-        # Get connection from pool
-        client = await conn_manager.get_connection("localhost", 8069)
-        await client.login("demo", "admin", "admin")
-        
-        # Use connection
-        partners = await client.model("res.partner").limit(10).all()
-        print(f"Retrieved {len(partners)} partners")
-        
-        # Release connection back to pool
-        await conn_manager.release_connection(client)
-        
-        # Get connection statistics
-        stats = conn_manager.get_connection_stats()
-        print(f"Connection stats: {stats}")
-        
+        # Initialize the pool
+        await pool.initialize()
+
+        # Use connection from pool
+        async with pool.get_connection() as client:
+            # Make HTTP requests using the pooled connection
+            response = await client.post("/jsonrpc", json={
+                "jsonrpc": "2.0",
+                "method": "call",
+                "params": {
+                    "service": "common",
+                    "method": "version"
+                },
+                "id": 1
+            })
+
+            result = response.json()
+            print(f"Odoo version: {result}")
+
+        # Get pool statistics
+        stats = pool.get_stats()
+        print(f"Pool stats: {stats}")
+
     finally:
         # Clean up all connections
-        await conn_manager.close_all_connections()
+        await pool.close()
+
+# Alternative: Using with ZenooClient
+async def use_with_zenoo_client():
+    """Use connection pool with ZenooClient."""
+
+    # ZenooClient uses connection pooling internally
+    async with ZenooClient("localhost", port=8069) as client:
+        await client.login("demo", "admin", "admin")
+
+        # All operations use the internal connection pool
+        partners = await client.search("res.partner", [], limit=10)
+        print(f"Retrieved {len(partners)} partners")
+
+        # Connection pool is automatically managed
 ```
 
-## ResourceManager
+## Best Practices
 
-### Class Reference
+### Resource Management
+
+Since Zenoo RPC doesn't have a dedicated ResourceManager, here are recommended patterns for managing resources:
 
 ```python
-class ResourceManager:
-    """Manages application resources and lifecycle."""
-    
+async def resource_management_pattern():
+    """Recommended resource management pattern."""
+
+    # Use context managers for automatic cleanup
+    async with ZenooClient("localhost", port=8069) as client:
+        await client.login("demo", "admin", "admin")
+
+        # Setup managers
+        await client.setup_transaction_manager()
+        await client.setup_cache_manager()
+
+        try:
+            # Use resources within context
+            async with client.transaction() as tx:
+                partners = await client.search("res.partner", [], limit=5)
+                print(f"Found {len(partners)} partners")
+
+        except Exception as e:
+            print(f"Error: {e}")
+            # Resources are automatically cleaned up
+
+        # Client is automatically closed when exiting context
+
+# Alternative: Manual resource management
+class ApplicationResourceManager:
+    """Custom resource manager for application-specific needs."""
+
     def __init__(self):
-        """Initialize resource manager."""
         self.resources = {}
         self.cleanup_handlers = []
-    
-    def register_resource(self, name: str, resource: Any, cleanup_func: Callable = None):
-        """Register a resource for management.
-        
-        Args:
-            name: Resource name
-            resource: Resource instance
-            cleanup_func: Optional cleanup function
-        """
-        pass
-    
-    def get_resource(self, name: str) -> Any:
-        """Get a managed resource.
-        
-        Args:
-            name: Resource name
-            
-        Returns:
-            Resource instance
-        """
-        pass
-    
+
+    async def setup_client(self, host: str, port: int = 8069):
+        """Setup and register ZenooClient."""
+        client = ZenooClient(host, port=port)
+        await client.__aenter__()
+
+        self.resources["client"] = client
+        self.cleanup_handlers.append(lambda: client.__aexit__(None, None, None))
+
+        return client
+
     async def cleanup_all(self):
-        """Clean up all managed resources."""
-        pass
-    
-    def add_cleanup_handler(self, handler: Callable):
-        """Add a cleanup handler.
-        
-        Args:
-            handler: Cleanup handler function
-        """
-        pass
+        """Clean up all registered resources."""
+        for handler in reversed(self.cleanup_handlers):
+            try:
+                await handler()
+            except Exception as e:
+                print(f"Cleanup error: {e}")
+
+        self.resources.clear()
+        self.cleanup_handlers.clear()
 ```
 
-### Usage Examples
+## Integrated Usage Patterns
+
+### Complete Application Setup
 
 ```python
-async def use_resource_manager():
-    """Demonstrate resource manager usage."""
-    
-    resource_manager = ResourceManager()
-    
-    # Register resources
-    client = ZenooClient("localhost", port=8069)
-    await client.login("demo", "admin", "admin")
-    
-    resource_manager.register_resource(
-        "odoo_client",
-        client,
-        cleanup_func=lambda: client.close()
-    )
-    
-    cache_backend = RedisBackend("redis://localhost:6379")
-    resource_manager.register_resource(
-        "redis_cache",
-        cache_backend,
-        cleanup_func=lambda: cache_backend.close()
-    )
-    
-    # Use resources
-    odoo_client = resource_manager.get_resource("odoo_client")
-    redis_cache = resource_manager.get_resource("redis_cache")
-    
-    # Perform operations
-    partners = await odoo_client.model("res.partner").limit(5).all()
-    await redis_cache.set("partners_count", len(partners))
-    
-    # Cleanup all resources
-    await resource_manager.cleanup_all()
-```
+async def setup_complete_application():
+    """Complete application setup with all managers."""
 
-## Integrated Manager Usage
+    async with ZenooClient("localhost", port=8069) as client:
+        await client.login("demo", "admin", "admin")
 
-### Application Manager
+        # Setup all managers
+        await client.setup_transaction_manager()
+        cache_manager = await client.setup_cache_manager(
+            backend="memory",
+            max_size=1000,
+            ttl=300
+        )
+
+        # Optional: Setup Redis cache as well
+        await cache_manager.setup_redis_cache(
+            name="redis",
+            url="redis://localhost:6379/0"
+        )
+
+        # Use all features together
+        async with client.transaction() as tx:
+            # Create partner with caching
+            partner_data = {"name": "Integrated Test Partner"}
+            partner_id = await client.create("res.partner", partner_data)
+
+            # Cache the result
+            await cache_manager.set(f"partner_{partner_id}", partner_data, ttl=600)
+
+            # Verify cached data
+            cached_partner = await cache_manager.get(f"partner_{partner_id}")
+            print(f"Cached partner: {cached_partner}")
+
+            # Transaction auto-commits on success
+
+        # Get statistics
+        cache_stats = await cache_manager.get_stats()
+        print(f"Cache statistics: {cache_stats}")
+
+### Production Application Manager
 
 ```python
-class ApplicationManager:
-    """High-level application manager combining all managers."""
-    
-    def __init__(self, config: Dict[str, Any]):
-        """Initialize application manager.
-        
-        Args:
-            config: Application configuration
-        """
+class ProductionAppManager:
+    """Production-ready application manager."""
+
+    def __init__(self, config: dict):
         self.config = config
-        self.connection_manager = ConnectionManager(
-            max_connections=config.get("max_connections", 10)
-        )
-        self.resource_manager = ResourceManager()
-        self.transaction_manager = None
-        self.cache_manager = None
-    
+        self.client = None
+
     async def initialize(self):
-        """Initialize all managers and resources."""
-        
-        # Get primary connection
-        client = await self.connection_manager.get_connection(
+        """Initialize application with all managers."""
+
+        # Setup client
+        self.client = ZenooClient(
             self.config["odoo_host"],
-            self.config["odoo_port"]
+            port=self.config.get("odoo_port", 8069),
+            timeout=self.config.get("timeout", 30.0)
         )
-        
-        await client.login(
+
+        await self.client.__aenter__()
+        await self.client.login(
             self.config["odoo_database"],
             self.config["odoo_username"],
             self.config["odoo_password"]
         )
-        
-        # Initialize managers
-        self.transaction_manager = TransactionManager(client)
-        self.cache_manager = CacheManager(client)
-        
-        # Setup cache backends
-        if self.config.get("redis_url"):
-            redis_backend = RedisBackend(self.config["redis_url"])
-            self.cache_manager.add_backend("redis", redis_backend, is_default=True)
-        
-        memory_backend = MemoryBackend(max_size=self.config.get("memory_cache_size", 1000))
-        self.cache_manager.add_backend("memory", memory_backend)
+
+        # Setup managers
+        await self.client.setup_transaction_manager()
+        await self.client.setup_cache_manager(
+            backend=self.config.get("cache_backend", "memory"),
+            url=self.config.get("redis_url"),
+            max_size=self.config.get("cache_size", 1000),
+            ttl=self.config.get("cache_ttl", 300)
+        )
+
+        return self.client
+
+    async def cleanup(self):
+        """Clean up all resources."""
+        if self.client:
+            await self.client.__aexit__(None, None, None)
         
         # Register resources
         self.resource_manager.register_resource("client", client)

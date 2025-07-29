@@ -631,6 +631,34 @@ Q(email__exact="user@domain.com")  # When you have exact email
 Q(name__contains="A")  # Too broad, may return too many results
 ```
 
+## Ordering Results
+
+### `order_by(*fields)`
+
+Order query results by specified fields.
+
+**Parameters:**
+
+- `*fields` (str): Field names to order by. Prefix with `-` for descending order.
+
+**Returns:** `QuerySet` - Ordered QuerySet
+
+**Examples:**
+
+```python
+# Order by single field (ascending)
+partners = await client.model(ResPartner).order_by("name").all()
+
+# Order by multiple fields
+partners = await client.model(ResPartner).order_by("country_id", "name").all()
+
+# Descending order (prefix with -)
+partners = await client.model(ResPartner).order_by("-create_date").all()
+
+# Mixed ordering
+partners = await client.model(ResPartner).order_by("country_id", "-name").all()
+```
+
 ## Next Steps
 
 - Learn about [Field Expressions](expressions.md) for advanced field operations

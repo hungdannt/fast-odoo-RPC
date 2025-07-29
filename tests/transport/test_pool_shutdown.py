@@ -12,7 +12,7 @@ import pytest
 import httpx
 
 from zenoo_rpc.transport.pool import (
-    EnhancedConnectionPool,
+    ConnectionPool,
     PooledConnection,
     ConnectionState,
     ConnectionContext,
@@ -26,7 +26,7 @@ class TestPoolShutdown:
     @pytest.fixture
     async def pool(self):
         """Create a test connection pool."""
-        pool = EnhancedConnectionPool(
+        pool = ConnectionPool(
             base_url="http://test.example.com",
             pool_size=5,
             max_connections=10,

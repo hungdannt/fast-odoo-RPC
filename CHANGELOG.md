@@ -16,6 +16,49 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 ### Fixed
 - TBD for next release
 
+## [0.1.7] - 2025-01-28
+
+### Fixed
+- **Pydantic Warning**: Fixed field shadowing warning in ResPartner model by using ClassVar for odoo_name
+
+## [0.1.6] - 2025-01-28
+
+### Fixed
+- **Critical Fix**: Moved dependencies from flit config to proper [project] section for setuptools
+- **Package Dependencies**: Fixed dependency installation issue - dependencies now properly installed
+
+## [0.1.5] - 2025-01-28
+
+### Fixed
+- **Setuptools Configuration**: Added proper package discovery and dependency resolution
+- **Package Dependencies**: Fixed dependency installation issue in PyPI package
+
+## [0.1.4] - 2025-01-28
+
+### Fixed
+- **Build System**: Changed from flit to setuptools for better dependency resolution
+- **Package Dependencies**: Fixed dependency resolution issue in PyPI package
+
+## [0.1.3] - 2025-01-28
+
+### Fixed
+- **Package Dependencies**: Fixed dependency resolution issue in PyPI package
+
+## [0.1.2] - 2025-01-28
+
+### Fixed
+- **QueryBuilder.get() Method**: Fixed method signature to accept positional ID parameter (`client.model(ResPartner).get(1)`)
+- **LazyRelationship.all() Method**: Added missing `.all()` method for lazy relationship collections (`partner.child_ids.all()`)
+- **Model Instance Creation**: Fixed lazy loading to return proper model instances instead of raw dictionaries
+- **Authentication Context**: Ensured client context is properly propagated to lazy loading operations
+- **Caching Performance**: Fixed timeout issues with cached queries on large datasets
+- **API Consistency**: Restored full compatibility with documented README.md examples
+
+### Improved
+- **Lazy Loading Performance**: Enhanced batch loading mechanism to prevent N+1 queries
+- **Type Safety**: Improved model instance creation with proper type annotations and IDE support
+- **Error Handling**: Better error messages and graceful fallbacks in lazy loading operations
+
 ## [0.1.1] - 2025-07-28
 
 ### Added

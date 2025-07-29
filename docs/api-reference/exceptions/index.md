@@ -9,22 +9,27 @@ ZenooError (Base)
 ├── ConnectionError
 ├── AuthenticationError
 ├── ValidationError
-├── AccessError
 ├── RequestTimeoutError
 ├── MethodNotFoundError
 ├── InternalError
-├── TransactionError
+├── TimeoutError
+├── TransactionError (from zenoo_rpc.transaction.exceptions)
 │   ├── TransactionRollbackError
 │   ├── TransactionCommitError
 │   ├── NestedTransactionError
 │   └── TransactionStateError
-├── CacheError
+├── CacheError (from zenoo_rpc.cache.exceptions)
 │   ├── CacheBackendError
-│   └── CacheKeyError
-├── BatchError
+│   ├── CacheKeyError
+│   ├── CacheConnectionError
+│   ├── CacheSerializationError
+│   └── CacheTimeoutError
+├── BatchError (from zenoo_rpc.batch.exceptions)
 │   ├── BatchExecutionError
-│   └── BatchValidationError
-└── RetryError
+│   ├── BatchValidationError
+│   ├── BatchSizeError
+│   └── BatchTimeoutError
+└── RetryError (from zenoo_rpc.retry.exceptions)
     ├── MaxRetriesExceededError
     └── RetryTimeoutError
 ```
@@ -326,7 +331,7 @@ class TransactionRollbackError(TransactionError):
 **Example:**
 
 ```python
-from zenoo_rpc.exceptions import TransactionRollbackError
+from zenoo_rpc.transaction.exceptions import TransactionRollbackError
 from zenoo_rpc.transaction.manager import TransactionManager
 
 try:
@@ -373,7 +378,7 @@ class CacheBackendError(CacheError):
 **Example:**
 
 ```python
-from zenoo_rpc.exceptions import CacheBackendError
+from zenoo_rpc.cache.exceptions import CacheBackendError
 
 try:
     await client.cache_manager.setup_redis_cache(
@@ -418,14 +423,13 @@ class BatchExecutionError(BatchError):
 **Example:**
 
 ```python
-from zenoo_rpc.exceptions import BatchExecutionError
+from zenoo_rpc.batch.exceptions import BatchExecutionError
 from zenoo_rpc.batch.manager import BatchManager
 
 try:
     batch_manager = BatchManager(client)
-    async with batch_manager.batch() as batch_context:
-        # Batch operations that might fail
-        await batch_manager.bulk_create("res.partner", invalid_data)
+    # Use bulk operations directly (correct API)
+    await batch_manager.bulk_create("res.partner", invalid_data)
 except BatchExecutionError as e:
     print(f"Batch {e.batch_id} failed: {e.message}")
     for failed_op in e.failed_operations:
@@ -466,13 +470,13 @@ class MaxRetriesExceededError(RetryError):
 **Example:**
 
 ```python
-from zenoo_rpc.exceptions import MaxRetriesExceededError
+from zenoo_rpc.retry.exceptions import MaxRetriesExceededError
 from zenoo_rpc.retry.decorators import async_retry
 
 @async_retry(max_attempts=3)
 async def unreliable_operation():
     # Operation that might fail
-    await client.search("res.partner", [])
+    await client.search_read("res.partner", [])
 
 try:
     await unreliable_operation()

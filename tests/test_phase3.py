@@ -16,7 +16,7 @@ from zenoo_rpc.cache.backends import MemoryCache
 from zenoo_rpc.cache.strategies import TTLCache, LRUCache
 from zenoo_rpc.batch.manager import BatchManager, Batch
 from zenoo_rpc.batch.operations import CreateOperation, UpdateOperation, DeleteOperation
-from zenoo_rpc.transport.pool import EnhancedConnectionPool
+from zenoo_rpc.transport.pool import ConnectionPool
 
 
 class TestTransactionManager:
@@ -302,13 +302,13 @@ class TestBatchOperations:
         assert result is True
 
 
-class TestEnhancedConnectionPool:
-    """Test cases for enhanced connection pooling."""
+class TestConnectionPool:
+    """Test cases for connection pooling."""
 
     @pytest.mark.asyncio
     async def test_pool_initialization(self):
         """Test connection pool initialization."""
-        pool = EnhancedConnectionPool(
+        pool = ConnectionPool(
             base_url="https://demo.odoo.com", pool_size=5, http2=True
         )
 
@@ -321,7 +321,7 @@ class TestEnhancedConnectionPool:
     @pytest.mark.asyncio
     async def test_connection_acquisition(self):
         """Test connection acquisition and release."""
-        pool = EnhancedConnectionPool(base_url="https://demo.odoo.com", pool_size=2)
+        pool = ConnectionPool(base_url="https://demo.odoo.com", pool_size=2)
 
         await pool.initialize()
 
@@ -336,7 +336,7 @@ class TestEnhancedConnectionPool:
     @pytest.mark.asyncio
     async def test_pool_stats(self):
         """Test connection pool statistics."""
-        pool = EnhancedConnectionPool(base_url="https://demo.odoo.com", pool_size=3)
+        pool = ConnectionPool(base_url="https://demo.odoo.com", pool_size=3)
 
         await pool.initialize()
 
@@ -350,7 +350,7 @@ class TestEnhancedConnectionPool:
     @pytest.mark.asyncio
     async def test_pool_cleanup(self):
         """Test connection pool cleanup."""
-        pool = EnhancedConnectionPool(base_url="https://demo.odoo.com", pool_size=2)
+        pool = ConnectionPool(base_url="https://demo.odoo.com", pool_size=2)
 
         await pool.initialize()
         assert len(pool.connections) == 2

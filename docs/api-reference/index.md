@@ -23,7 +23,7 @@ The Zenoo RPC API is organized into several main modules:
 |-------|--------|-------------|
 | `ZenooClient` | `zenoo_rpc` | Main client for Odoo RPC operations |
 | `QueryBuilder` | `zenoo_rpc.query.builder` | Fluent query building interface |
-| `QuerySet` | `zenoo_rpc.query.queryset` | Query execution and result handling |
+| `QuerySet` | `zenoo_rpc.query.builder` | Query execution and result handling |
 | `BatchManager` | `zenoo_rpc.batch.manager` | Bulk operations management |
 | `TransactionManager` | `zenoo_rpc.transaction.manager` | Transaction context management |
 | `CacheManager` | `zenoo_rpc.cache.manager` | Cache backend management |
@@ -33,7 +33,7 @@ The Zenoo RPC API is organized into several main modules:
 ```python
 # Core functionality
 from zenoo_rpc import ZenooClient
-from zenoo_rpc.models.common import ResPartner, ResCountry, ResPartnerCategory
+from zenoo_rpc.models.common import ResPartner, ResCountry, ResUsers
 
 # Query building
 from zenoo_rpc.query.filters import Q
@@ -74,10 +74,10 @@ async def main():
         await client.login("database", "username", "password")
         
         # Setup cache (optional)
-        await client.cache_manager.setup_memory_cache(
-            name="default",
+        await client.setup_cache_manager(
+            backend="memory",
             max_size=1000,
-            strategy="ttl"
+            ttl=300
         )
         
         # Use query builder
@@ -92,18 +92,14 @@ async def main():
             "is_company": True
         })
         
-        # Batch operations
-        from zenoo_rpc.batch.manager import BatchManager
-        batch_manager = BatchManager(client=client)
-        
-        async with batch_manager.batch() as batch_context:
-            created_ids = await batch_manager.bulk_create(
-                model="res.partner",
-                records=[
-                    {"name": "Company 1", "email": "c1@test.com"},
-                    {"name": "Company 2", "email": "c2@test.com"}
-                ]
-            )
+        # Batch operations (optional)
+        await client.setup_batch_manager()
+
+        async with client.batch() as batch:
+            created_ids = await batch.create_many(ResPartner, [
+                {"name": "Company 1", "email": "c1@test.com"},
+                {"name": "Company 2", "email": "c2@test.com"}
+            ])
 
 asyncio.run(main())
 ```
@@ -116,10 +112,10 @@ All Zenoo RPC operations are asynchronous and must be awaited:
 
 ```python
 # ✅ Correct
-partners = await client.model(ResPartner).all()
+partners = await client.search("res.partner", [], limit=10)
 
 # ❌ Incorrect
-partners = client.model(ResPartner).all()  # Returns coroutine, not data
+partners = client.search("res.partner", [])  # Returns coroutine, not data
 ```
 
 ### Context Managers
@@ -162,12 +158,15 @@ except ValidationError as e:
 Query builder supports method chaining:
 
 ```python
-# Chain multiple operations
-partners = await client.model(ResPartner).filter(
-    is_company=True
-).exclude(
-    active=False
-).order_by("name").limit(50).offset(100).all()
+# Chain multiple operations using search with domain
+partners = await client.search_read(
+    "res.partner",
+    domain=[("is_company", "=", True), ("active", "=", True)],
+    fields=["name", "email", "phone"],
+    limit=50,
+    offset=100,
+    order="name"
+)
 ```
 
 ## Type Hints
@@ -179,22 +178,27 @@ from typing import List, Optional
 from zenoo_rpc import ZenooClient
 from zenoo_rpc.models.common import ResPartner
 
-async def get_companies(client: ZenooClient) -> List[ResPartner]:
+async def get_companies(client: ZenooClient) -> List[dict]:
     """Get all company partners with proper type hints."""
-    companies: List[ResPartner] = await client.model(ResPartner).filter(
-        is_company=True
-    ).all()
+    companies = await client.search_read(
+        "res.partner",
+        domain=[("is_company", "=", True)],
+        fields=["name", "email", "phone"]
+    )
     return companies
 
 async def find_partner_by_email(
-    client: ZenooClient, 
+    client: ZenooClient,
     email: str
-) -> Optional[ResPartner]:
+) -> Optional[dict]:
     """Find partner by email with optional return type."""
-    partner: Optional[ResPartner] = await client.model(ResPartner).filter(
-        email=email
-    ).first()
-    return partner
+    partners = await client.search_read(
+        "res.partner",
+        domain=[("email", "=", email)],
+        fields=["name", "email", "phone"],
+        limit=1
+    )
+    return partners[0] if partners else None
 ```
 
 ## Configuration Options
@@ -213,32 +217,56 @@ client = ZenooClient(
 
 # URL-based configuration
 client = ZenooClient("https://demo.odoo.com")
+
+# Advanced configuration
+client = ZenooClient(
+    "localhost",
+    port=8069,
+    timeout=60.0,
+    verify_ssl=False  # For development only
+)
 ```
 
 ### Cache Configuration
 
 ```python
-# Memory cache
-await client.cache_manager.setup_memory_cache(
-    name="memory_cache",
+# Setup memory cache (recommended)
+cache_manager = await client.setup_cache_manager(
+    backend="memory",
     max_size=1000,
-    strategy="ttl"
+    ttl=300
 )
 
-# Redis cache
-await client.cache_manager.setup_redis_cache(
-    name="redis_cache",
+# Setup Redis cache
+cache_manager = await client.setup_cache_manager(
+    backend="redis",
     url="redis://localhost:6379/0",
-    namespace="zenoo_rpc",
-    strategy="ttl",
-    enable_fallback=True
+    enable_fallback=True,
+    max_size=1000,
+    ttl=300
 )
+
+# Manual cache manager setup
+if client.cache_manager:
+    await client.cache_manager.setup_redis_cache(
+        name="redis",
+        url="redis://localhost:6379/0",
+        namespace="zenoo_rpc",
+        enable_fallback=True
+    )
 ```
 
 ### Batch Configuration
 
 ```python
-# Batch manager setup
+# Setup batch manager (recommended)
+batch_manager = await client.setup_batch_manager(
+    max_chunk_size=100,
+    max_concurrency=5,
+    timeout=300
+)
+
+# Manual batch manager setup
 from zenoo_rpc.batch.manager import BatchManager
 
 batch_manager = BatchManager(
@@ -284,41 +312,51 @@ class ServiceClass:
 ### Caching Strategy
 
 ```python
-# Cache frequently accessed data
-countries = await client.model(ResCountry).cache(
-    key="all_countries",
-    ttl=3600  # Cache for 1 hour
-).all()
+# Setup cache manager first
+await client.setup_cache_manager(backend="memory", max_size=1000, ttl=300)
+
+# Cache frequently accessed data manually
+cache_key = "all_countries"
+countries = await client.cache_manager.get(cache_key)
+if not countries:
+    countries = await client.search_read("res.country", [], fields=["name", "code"])
+    await client.cache_manager.set(cache_key, countries, ttl=3600)
 
 # Cache expensive queries
-partner_count = await client.model(ResPartner).filter(
-    is_company=True
-).cache(
-    key="company_count",
-    ttl=300  # Cache for 5 minutes
-).count()
+cache_key = "company_count"
+partner_count = await client.cache_manager.get(cache_key)
+if partner_count is None:
+    partner_count = await client.search_count("res.partner", [("is_company", "=", True)])
+    await client.cache_manager.set(cache_key, partner_count, ttl=300)
 ```
 
 ### Batch Operations
 
 ```python
+# Setup batch manager
+await client.setup_batch_manager(max_chunk_size=100, max_concurrency=5)
+
 # Use batch operations for bulk data
-async with batch_manager.batch() as batch_context:
+async with client.batch() as batch:
     # Bulk create
-    created_ids = await batch_manager.bulk_create(
-        model="res.partner",
-        records=large_dataset,
-        chunk_size=100
-    )
-    
+    created_ids = await batch.create_many("res.partner", [
+        {"name": "Company 1", "is_company": True},
+        {"name": "Company 2", "is_company": True}
+    ])
+
     # Bulk update
-    await batch_manager.bulk_write(
-        model="res.partner",
-        updates=[
-            {"id": 1, "data": {"active": True}},
-            {"id": 2, "data": {"active": True}}
-        ]
-    )
+    await batch.write_many("res.partner", [
+        {"id": 1, "values": {"active": True}},
+        {"id": 2, "values": {"active": True}}
+    ])
+
+# Alternative: Direct bulk operations
+batch_manager = await client.setup_batch_manager()
+created_ids = await batch_manager.bulk_create(
+    model="res.partner",
+    records=large_dataset,
+    chunk_size=100
+)
 ```
 
 ## Debugging and Logging
@@ -350,8 +388,8 @@ async def logged_operation():
         await client.login("demo", "admin", "admin")
         
         logger.info("Searching for partners")
-        partners = await client.model(ResPartner).all()
-        
+        partners = await client.search("res.partner", [], limit=100)
+
         logger.info(f"Found {len(partners)} partners")
 ```
 
@@ -373,14 +411,15 @@ partners = odoo.env['res.partner'].search_read(
 # New Zenoo RPC code
 import asyncio
 from zenoo_rpc import ZenooClient
-from zenoo_rpc.models.common import ResPartner
 
 async def main():
     async with ZenooClient('localhost', port=8069) as client:
         await client.login('demo', 'admin', 'admin')
-        partners = await client.model(ResPartner).filter(
-            is_company=True
-        ).only('name', 'email').all()
+        partners = await client.search_read(
+            'res.partner',
+            domain=[('is_company', '=', True)],
+            fields=['name', 'email']
+        )
 
 asyncio.run(main())
 ```

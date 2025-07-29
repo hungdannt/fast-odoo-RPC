@@ -90,8 +90,9 @@ operation = CreateOperation(
 )
 
 # Check duration after execution
-if operation.get_duration():
-    print(f"Operation took {operation.get_duration():.2f} seconds")
+if operation.completed_at and operation.started_at:
+    duration = operation.completed_at - operation.started_at
+    print(f"Operation took {duration:.2f} seconds")
 ```
 
 ## CreateOperation
@@ -528,8 +529,9 @@ operation.result = [123]  # Created record ID
 
 # Check results
 if operation.status == OperationStatus.COMPLETED:
-    duration = operation.get_duration()
-    print(f"Operation completed in {duration:.2f} seconds")
+    if operation.completed_at and operation.started_at:
+        duration = operation.completed_at - operation.started_at
+        print(f"Operation completed in {duration:.2f} seconds")
     print(f"Created record ID: {operation.result[0]}")
 ```
 

@@ -35,6 +35,7 @@ class Field:
 
 ```python
 from zenoo_rpc.query.expressions import Field
+from zenoo_rpc.models.common import ResPartner
 
 # Simple field
 name_field = Field("name")
