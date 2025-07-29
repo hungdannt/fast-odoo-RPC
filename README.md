@@ -16,7 +16,7 @@
 [![Downloads](https://img.shields.io/pypi/dm/zenoo-rpc.svg)](https://pypi.org/project/zenoo-rpc/)
 [![GitHub stars](https://img.shields.io/github/stars/tuanle96/zenoo-rpc.svg)](https://github.com/tuanle96/zenoo-rpc/stargazers)
 
-[📚 Documentation](https://zenoo-rpc.readthedocs.io) • [🚀 Quick Start](https://zenoo-rpc.readthedocs.io/getting-started/quickstart/) • [📦 PyPI](https://pypi.org/project/zenoo-rpc/) • [🐛 Issues](https://github.com/tuanle96/zenoo-rpc/issues) • [💬 Discussions](https://github.com/tuanle96/zenoo-rpc/discussions)
+[📚 Documentation](https://zenoo-rpc.readthedocs.io) • [🚀 Quick Start](https://zenoo-rpc.readthedocs.io/en/latest/getting-started/quickstart/) • [📦 PyPI](https://pypi.org/project/zenoo-rpc/) • [🐛 Issues](https://github.com/tuanle96/zenoo-rpc/issues) • [💬 Discussions](https://github.com/tuanle96/zenoo-rpc/discussions)
 
 </div>
 
