@@ -29,7 +29,6 @@ try:
     from .core.ai_assistant import AIAssistant
     from .query.nl_to_query import NaturalLanguageQueryProcessor
     from .diagnostics.error_analyzer import AIErrorAnalyzer
-    from .models.model_generator import AIModelGenerator
     
     AI_AVAILABLE = True
 except ImportError as e:
@@ -41,14 +40,12 @@ if TYPE_CHECKING or AI_AVAILABLE:
     from .core.ai_assistant import AIAssistant
     from .query.nl_to_query import NaturalLanguageQueryProcessor
     from .diagnostics.error_analyzer import AIErrorAnalyzer
-    from .models.model_generator import AIModelGenerator
 
 __all__ = [
     "AIClient",
-    "AIAssistant", 
+    "AIAssistant",
     "NaturalLanguageQueryProcessor",
     "AIErrorAnalyzer",
-    "AIModelGenerator",
     "AI_AVAILABLE",
 ]
 

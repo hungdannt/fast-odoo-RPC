@@ -11,7 +11,6 @@ from typing import Any, Dict, List, Optional, TYPE_CHECKING, Union
 from .ai_client import AIClient, AIConfig, AIProvider
 from ..query.nl_to_query import NaturalLanguageQueryProcessor
 from ..diagnostics.error_analyzer import AIErrorAnalyzer
-from ..models.model_generator import AIModelGenerator
 
 if TYPE_CHECKING:
     from ...client import ZenooClient
@@ -62,7 +61,6 @@ class AIAssistant:
         self.ai_client: Optional[AIClient] = None
         self.query_processor: Optional[NaturalLanguageQueryProcessor] = None
         self.error_analyzer: Optional[AIErrorAnalyzer] = None
-        self.model_generator: Optional[AIModelGenerator] = None
         self._initialized = False
     
     async def initialize(
@@ -109,7 +107,6 @@ class AIAssistant:
         # Initialize AI components
         self.query_processor = NaturalLanguageQueryProcessor(self.ai_client, self.client)
         self.error_analyzer = AIErrorAnalyzer(self.ai_client, self.client)
-        self.model_generator = AIModelGenerator(self.ai_client, self.client)
         
         self._initialized = True
         logger.info(f"AI assistant initialized with {provider.value}/{model}")
@@ -218,34 +215,7 @@ class AIAssistant:
         
         return await self.error_analyzer.suggest_optimization(query_stats)
     
-    async def generate_model(
-        self,
-        model_name: str,
-        include_relationships: bool = True,
-        include_computed_fields: bool = False
-    ) -> str:
-        """Generate Python model code from Odoo model.
-        
-        Args:
-            model_name: Odoo model name (e.g., "res.partner")
-            include_relationships: Whether to include relationship fields
-            include_computed_fields: Whether to include computed fields
-            
-        Returns:
-            Generated Python model code
-            
-        Example:
-            >>> model_code = await client.ai.generate_model("res.partner")
-            >>> print(model_code)
-            >>> # Outputs complete Pydantic model with proper types
-        """
-        self._ensure_initialized()
-        
-        return await self.model_generator.generate_model(
-            model_name=model_name,
-            include_relationships=include_relationships,
-            include_computed_fields=include_computed_fields
-        )
+
     
     async def chat(self, message: str, context: Optional[str] = None) -> str:
         """Have a conversation about Odoo development.

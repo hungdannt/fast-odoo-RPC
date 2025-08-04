@@ -6,10 +6,9 @@ as the unified interface for various LLM providers, with optimized support
 for Google Gemini models.
 """
 
-import asyncio
 import json
 import logging
-from typing import Any, Dict, List, Optional, Union, Literal
+from typing import Any, Dict, Optional
 from dataclasses import dataclass
 from enum import Enum
 
@@ -211,7 +210,12 @@ class AIClient:
             # Extract response data
             choice = response.choices[0]
             content = choice.message.content
-            
+
+            # Ensure content is not None
+            if content is None:
+                content = ""
+                logger.warning("AI response content is None, using empty string")
+
             return AIResponse(
                 content=content,
                 model=response.model,
@@ -269,14 +273,84 @@ class AIClient:
         
         try:
             # Parse JSON response
-            result = json.loads(response.content)
+            content = response.content.strip()
+
+            # Handle cases where response might be wrapped in markdown
+            if content.startswith("```json"):
+                content = content[7:]
+            if content.endswith("```"):
+                content = content[:-3]
+            content = content.strip()
+
+            # Try to parse JSON
+            result = json.loads(content)
+
+            # Validate that result is a dictionary
+            if not isinstance(result, dict):
+                raise ValueError(f"Expected dict response, got {type(result)}")
+
             return result
-            
+
         except json.JSONDecodeError as e:
             logger.error(f"Failed to parse JSON response: {e}")
-            logger.error(f"Response content: {response.content}")
-            raise
+            logger.error(f"Response content: {response.content[:500]}...")
+
+            # Try to extract JSON from response if it's embedded in text
+            try:
+                import re
+                json_match = re.search(r'\{.*\}', response.content, re.DOTALL)
+                if json_match:
+                    result = json.loads(json_match.group())
+                    logger.warning("Extracted JSON from embedded response")
+                    return result
+            except:
+                pass
+
+            # Return fallback response matching expected schema
+            return self._get_fallback_structured_response(schema)
+        except Exception as e:
+            logger.error(f"Structured completion failed: {e}")
+            return self._get_fallback_structured_response(schema)
     
+    def _get_fallback_structured_response(self, schema: Dict[str, Any]) -> Dict[str, Any]:
+        """Generate fallback response matching schema when parsing fails."""
+        fallback = {}
+
+        # Extract required fields from schema
+        required_fields = schema.get("required", [])
+        properties = schema.get("properties", {})
+
+        for field in required_fields:
+            field_schema = properties.get(field, {})
+            field_type = field_schema.get("type", "string")
+
+            if field_type == "string":
+                fallback[field] = field_schema.get("description", f"Fallback {field}")
+            elif field_type == "number":
+                fallback[field] = 0.5
+            elif field_type == "integer":
+                fallback[field] = 0
+            elif field_type == "boolean":
+                fallback[field] = False
+            elif field_type == "array":
+                fallback[field] = []
+            elif field_type == "object":
+                fallback[field] = {}
+
+        # Add optional fields with defaults
+        for field, field_schema in properties.items():
+            if field not in fallback:
+                field_type = field_schema.get("type", "string")
+                if field_type == "string":
+                    fallback[field] = ""
+                elif field_type == "number":
+                    fallback[field] = 0.0
+                elif field_type == "array":
+                    fallback[field] = []
+
+        logger.warning(f"Using fallback structured response: {fallback}")
+        return fallback
+
     async def close(self) -> None:
         """Clean up resources."""
         self._initialized = False

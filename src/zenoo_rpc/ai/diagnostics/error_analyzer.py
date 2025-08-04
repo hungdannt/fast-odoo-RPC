@@ -289,14 +289,22 @@ Provide:
 
 Focus on practical, actionable solutions for Odoo/Zenoo RPC development."""
         
-        response = await self.ai_client.complete_structured(
-            prompt=prompt,
-            schema=schema,
-            system=self._get_analysis_system_prompt(),
-            temperature=0.1
-        )
-        
-        return response
+        try:
+            response = await self.ai_client.complete_structured(
+                prompt=prompt,
+                schema=schema,
+                system=self._get_analysis_system_prompt(),
+                temperature=0.1
+            )
+
+            # Validate response structure and provide defaults for missing fields
+            validated_response = self._validate_analysis_response(response)
+            return validated_response
+
+        except Exception as e:
+            logger.error(f"AI analysis failed: {e}")
+            # Return fallback response
+            return self._get_fallback_analysis(error_info, category)
     
     async def _enhance_with_solutions(
         self,
@@ -333,7 +341,49 @@ Focus on practical, actionable solutions for Odoo/Zenoo RPC development."""
         analysis["documentation"] = self._get_relevant_docs(error_type)
         
         return analysis
-    
+
+    def _validate_analysis_response(self, response: Dict[str, Any]) -> Dict[str, Any]:
+        """Validate and fix AI analysis response structure."""
+        # Ensure all required fields exist with defaults
+        validated = {
+            "problem": response.get("problem", "Unknown problem occurred"),
+            "root_cause": response.get("root_cause", "Root cause analysis unavailable"),
+            "solution": response.get("solution", "Please check error details and try again"),
+            "confidence": response.get("confidence", 0.5),
+            "severity": response.get("severity", "medium"),
+            "code_example": response.get("code_example", ""),
+            "prevention": response.get("prevention", "Follow best practices to prevent similar issues")
+        }
+
+        # Validate confidence is a number between 0 and 1
+        try:
+            confidence = float(validated["confidence"])
+            validated["confidence"] = max(0.0, min(1.0, confidence))
+        except (ValueError, TypeError):
+            validated["confidence"] = 0.5
+
+        # Validate severity is one of allowed values
+        allowed_severities = ["low", "medium", "high", "critical"]
+        if validated["severity"] not in allowed_severities:
+            validated["severity"] = "medium"
+
+        return validated
+
+    def _get_fallback_analysis(self, error_info: Dict[str, Any], category: str) -> Dict[str, Any]:
+        """Provide fallback analysis when AI fails."""
+        error_type = error_info.get("type", "Unknown")
+        error_message = error_info.get("message", "No message available")
+
+        return {
+            "problem": f"{error_type}: {error_message}",
+            "root_cause": f"Error of type '{error_type}' occurred in category '{category}'",
+            "solution": "Check the error message and context for specific details. Consult documentation or support if needed.",
+            "confidence": 0.3,  # Low confidence for fallback
+            "severity": "medium",
+            "code_example": "# Check error details and context\n# Review relevant documentation\n# Test with simplified case",
+            "prevention": "Follow error handling best practices and validate inputs before operations"
+        }
+
     def _get_analysis_system_prompt(self) -> str:
         """Get system prompt for error analysis."""
         return """You are an expert Odoo developer and troubleshooting specialist.

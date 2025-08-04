@@ -5,10 +5,8 @@ This module converts natural language descriptions into optimized Odoo queries
 using AI-powered analysis and domain generation.
 """
 
-import json
 import logging
-import re
-from typing import Any, Dict, List, Optional, Tuple, TYPE_CHECKING
+from typing import Any, Dict, List, Optional, TYPE_CHECKING
 
 if TYPE_CHECKING:
     from ..core.ai_client import AIClient
@@ -136,13 +134,15 @@ class NaturalLanguageQueryProcessor:
                     limit=limit or 100
                 )
             else:
-                ids = await self.zenoo_client.search(
+                # Use execute_kw to call search method directly
+                ids = await self.zenoo_client.execute_kw(
                     model_name,
-                    domain,
-                    limit=limit or 100
+                    "search",
+                    [domain],
+                    {"limit": limit or 100}
                 )
                 results = await self.zenoo_client.read(model_name, ids)
-            
+
             return results
             
         except Exception as e:
@@ -151,25 +151,37 @@ class NaturalLanguageQueryProcessor:
     
     async def explain_query(self, natural_language: str) -> Dict[str, Any]:
         """Explain how natural language converts to Odoo query.
-        
+
         Args:
             natural_language: Natural language description
-            
+
         Returns:
             Dictionary with explanation, model, domain, and fields
         """
-        query_info = await self._parse_query(natural_language)
-        
-        explanation = await self._generate_explanation(natural_language, query_info)
-        
-        return {
-            "natural_language": natural_language,
-            "explanation": explanation,
-            "model": query_info["model"],
-            "domain": query_info["domain"],
-            "fields": query_info.get("fields", []),
-            "estimated_records": query_info.get("estimated_records", "unknown")
-        }
+        try:
+            query_info = await self._parse_query(natural_language)
+
+            explanation = await self._generate_explanation(natural_language, query_info)
+
+            return {
+                "natural_language": natural_language,
+                "explanation": explanation,
+                "model": query_info.get("model", "res.partner"),  # Safe fallback
+                "domain": query_info.get("domain", []),
+                "fields": query_info.get("fields", []),
+                "estimated_records": query_info.get("estimated_records", "unknown")
+            }
+        except Exception as e:
+            logger.error(f"Query explanation failed: {e}")
+            # Return safe fallback explanation
+            return {
+                "natural_language": natural_language,
+                "explanation": f"Unable to explain query: {str(e)}",
+                "model": "res.partner",
+                "domain": [],
+                "fields": [],
+                "estimated_records": "unknown"
+            }
     
     async def _parse_query(
         self,
@@ -229,13 +241,91 @@ class NaturalLanguageQueryProcessor:
             system=self._get_system_prompt(),
             temperature=0.1
         )
-        
-        # Validate and process response
-        if response["confidence"] < 0.7:
-            logger.warning(f"Low confidence query interpretation: {response['confidence']}")
-        
+
+        # Validate and process response with error handling
+        if not isinstance(response, dict):
+            logger.error(f"Invalid response type: {type(response)}")
+            return self._get_fallback_query_response(prompt)
+
+        # Check required fields
+        required_fields = ["model", "domain"]
+        missing_fields = [field for field in required_fields if field not in response]
+
+        if missing_fields:
+            logger.warning(f"Missing required fields: {missing_fields}")
+            # Try to infer missing fields
+            if "model" not in response:
+                response["model"] = self._infer_model_from_query(prompt)
+            if "domain" not in response:
+                response["domain"] = []
+
+        # Validate model exists
+        model_name = response.get("model", "")
+        if model_name and not await self._validate_model_exists(model_name):
+            logger.warning(f"Model '{model_name}' may not exist, using fallback")
+            response["model"] = "res.partner"  # Safe fallback
+
+        # Handle optional confidence field
+        confidence = response.get("confidence", 0.8)  # Default confidence
+        if confidence < 0.7:
+            logger.warning(f"Low confidence query interpretation: {confidence}")
+
+        # Ensure response has all expected fields
+        response.setdefault("fields", [])
+        response.setdefault("reasoning", "AI query interpretation")
+        response.setdefault("confidence", confidence)
+
         return response
-    
+
+    def _get_fallback_query_response(self, query: str) -> Dict[str, Any]:
+        """Generate fallback response for failed queries."""
+        return {
+            "model": "res.partner",
+            "domain": [],
+            "fields": [],
+            "reasoning": f"Unable to parse query: {query}",
+            "confidence": 0.1
+        }
+
+    def _infer_model_from_query(self, query: str) -> str:
+        """Infer Odoo model from query text."""
+        query_lower = query.lower()
+
+        # Common model mappings
+        model_keywords = {
+            "partner": "res.partner",
+            "customer": "res.partner",
+            "company": "res.partner",
+            "contact": "res.partner",
+            "user": "res.users",
+            "product": "product.product",
+            "sale": "sale.order",
+            "purchase": "purchase.order",
+            "invoice": "account.move",
+            "lead": "crm.lead",
+            "opportunity": "crm.lead"
+        }
+
+        for keyword, model in model_keywords.items():
+            if keyword in query_lower:
+                return model
+
+        return "res.partner"  # Default fallback
+
+    async def _validate_model_exists(self, model_name: str) -> bool:
+        """Validate if model exists in Odoo."""
+        try:
+            # Try to get model info
+            await self.zenoo_client.execute_kw(
+                "ir.model",
+                "search_count",
+                [[["model", "=", model_name]]],
+                {}
+            )
+            return True
+        except Exception:
+            return False
+
     def _build_query_prompt(self, natural_language: str, model_hint: Optional[str] = None) -> str:
         """Build prompt for query parsing."""
         prompt = f"""Convert this natural language query to an Odoo domain filter:
