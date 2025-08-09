@@ -45,8 +45,15 @@ except ImportError:
                 return func
             return decorator
         
-        async def run(self, transport="stdio"):
+        async def run(self, transport="stdio", **kwargs):
+            host = kwargs.get('host', 'localhost')
+            port = kwargs.get('port', 8000)
             print(f"Mock MCP server '{self.name}' running with {transport} transport")
+            if transport == "http":
+                print(f"Mock HTTP server would run on {host}:{port}")
+            # Mock server - just wait indefinitely
+            import asyncio
+            await asyncio.Event().wait()
     
     class Tool:
         def __init__(self, name: str, description: str = ""):
@@ -121,7 +128,9 @@ class ZenooMCPServer:
         # Initialize FastMCP server
         self.mcp_server = FastMCP(
             name=config.name,
-            instructions=self._get_server_instructions()
+            instructions=self._get_server_instructions(),
+            host=config.host,
+            port=config.port
         )
         
         # Register tools, resources, and prompts
@@ -174,13 +183,10 @@ Rate Limits: {self.config.security.rate_limit_requests} requests per {self.confi
             # Run MCP server
             transport = self.config.transport_type.value
             if transport == "stdio":
-                await self.mcp_server.run("stdio")
+                await self.mcp_server.run_stdio_async()
             elif transport == "http":
-                await self.mcp_server.run(
-                    "http",
-                    host=self.config.host,
-                    port=self.config.port
-                )
+                # Use streamable-http transport for HTTP
+                await self.mcp_server.run_streamable_http_async()
             else:
                 raise MCPServerError(f"Unsupported transport: {transport}")
                 
@@ -192,16 +198,15 @@ Rate Limits: {self.config.security.rate_limit_requests} requests per {self.confi
         """Stop the MCP server."""
         try:
             if self.zenoo_client:
-                await self.zenoo_client.disconnect()
+                await self.zenoo_client.close()
             logger.info("MCP server stopped")
         except Exception as e:
             logger.error(f"Error stopping MCP server: {e}")
-    
+
     async def _connect_to_odoo(self) -> None:
         """Connect to Odoo using Zenoo RPC."""
         try:
             self.zenoo_client = ZenooClient(self.config.odoo_url)
-            await self.zenoo_client.connect()
             await self.zenoo_client.login(
                 self.config.odoo_database,
                 self.config.odoo_username,
@@ -492,11 +497,8 @@ Rate Limits: {self.config.security.rate_limit_requests} requests per {self.confi
             raise MCPToolError(f"Tool '{tool_name}' failed: {e}") from e
     
     async def _handle_search_records(self, args: Dict[str, Any]) -> Dict[str, Any]:
-        """Handle search_records tool using Zenoo RPC QueryBuilder."""
+        """Handle search_records tool using Zenoo RPC search_read."""
         try:
-            from ..models.registry import get_model_class
-            from ..query import Q
-
             model_name = args["model"]
             domain = args.get("domain", [])
             fields = args.get("fields")
@@ -504,48 +506,23 @@ Rate Limits: {self.config.security.rate_limit_requests} requests per {self.confi
             offset = args.get("offset", 0)
             order = args.get("order")
 
-            # Try to get registered model class for type safety
-            try:
-                model_class = get_model_class(model_name)
-                query = self.zenoo_client.model(model_class)
-            except (KeyError, ImportError):
-                # Fallback to dynamic model access
-                query = self.zenoo_client.model(model_name)
-
-            # Apply domain filters using QueryBuilder
-            if domain:
-                # Convert Odoo domain to QueryBuilder filters
-                query = self._apply_domain_to_query(query, domain)
-
-            # Apply ordering
-            if order:
-                query = query.order_by(order)
-
-            # Apply pagination
-            if offset:
-                query = query.offset(offset)
-            if limit:
-                query = query.limit(limit)
-
-            # Execute query with field selection
-            if fields:
-                records = await query.values(*fields)
-            else:
-                records = await query.all()
-
-            # Convert to serializable format
-            record_data = []
-            for record in records:
-                if hasattr(record, 'to_dict'):
-                    record_data.append(record.to_dict())
-                else:
-                    record_data.append(dict(record))
+            # Use search_read for direct Odoo access
+            records = await self.zenoo_client.search_read(
+                model=model_name,
+                domain=domain,
+                fields=fields,
+                limit=limit,
+                offset=offset,
+                order=order
+            )
 
             return {
-                "records": record_data,
-                "count": len(record_data),
+                "records": records,
+                "count": len(records),
                 "model": model_name,
-                "has_more": len(record_data) == limit
+                "has_more": len(records) == limit,
+                "domain": domain,
+                "fields": fields or "all"
             }
 
         except Exception as e:
@@ -749,13 +726,102 @@ Rate Limits: {self.config.security.rate_limit_requests} requests per {self.confi
     
     async def _execute_resource(self, resource_name: str, arguments: Dict[str, Any]) -> str:
         """Execute a resource request."""
-        # Mock implementation
-        return json.dumps({
-            "resource": resource_name,
-            "arguments": arguments,
-            "data": "Mock resource data"
-        })
+        try:
+            if resource_name == "list_models":
+                return await self._handle_list_models_resource()
+            elif resource_name == "get_model_info":
+                return await self._handle_model_info_resource(arguments)
+            elif resource_name == "get_record_resource":
+                return await self._handle_record_resource(arguments)
+            else:
+                return json.dumps({
+                    "error": f"Unknown resource: {resource_name}",
+                    "available_resources": ["list_models", "get_model_info", "get_record_resource"]
+                })
+        except Exception as e:
+            logger.error(f"Resource execution failed: {e}")
+            return json.dumps({
+                "error": f"Resource execution failed: {e}",
+                "resource": resource_name,
+                "arguments": arguments
+            })
     
+    async def _handle_list_models_resource(self) -> str:
+        """Handle list_models resource - get all available Odoo models."""
+        try:
+            # Get list of models from Odoo
+            models = await self.zenoo_client.execute_kw(
+                'ir.model', 'search_read',
+                [[]],
+                {'fields': ['model', 'name', 'info']}
+            )
+
+            return json.dumps({
+                "resource": "list_models",
+                "count": len(models),
+                "models": models[:50]  # Limit to first 50 for readability
+            })
+        except Exception as e:
+            logger.error(f"Failed to list models: {e}")
+            return json.dumps({"error": f"Failed to list models: {e}"})
+
+    async def _handle_model_info_resource(self, arguments: Dict[str, Any]) -> str:
+        """Handle get_model_info resource - get info about specific model."""
+        try:
+            model_name = arguments.get("model_name")
+            if not model_name:
+                return json.dumps({"error": "model_name is required"})
+
+            # Get model information
+            model_info = await self.zenoo_client.execute_kw(
+                'ir.model', 'search_read',
+                [[['model', '=', model_name]]],
+                {'fields': ['model', 'name', 'info']}
+            )
+
+            # Get model fields
+            fields = await self.zenoo_client.execute_kw(
+                'ir.model.fields', 'search_read',
+                [[['model', '=', model_name]]],
+                {'fields': ['name', 'field_description', 'ttype', 'required']}
+            )
+
+            return json.dumps({
+                "resource": "get_model_info",
+                "model_name": model_name,
+                "model_info": model_info[0] if model_info else None,
+                "fields": fields[:20]  # Limit fields for readability
+            })
+        except Exception as e:
+            logger.error(f"Failed to get model info: {e}")
+            return json.dumps({"error": f"Failed to get model info: {e}"})
+
+    async def _handle_record_resource(self, arguments: Dict[str, Any]) -> str:
+        """Handle get_record_resource - get specific record data."""
+        try:
+            model_name = arguments.get("model_name")
+            record_id = arguments.get("record_id")
+
+            if not model_name or not record_id:
+                return json.dumps({"error": "model_name and record_id are required"})
+
+            # Get record data
+            records = await self.zenoo_client.search_read(
+                model_name,
+                [['id', '=', int(record_id)]],
+                limit=1
+            )
+
+            return json.dumps({
+                "resource": "get_record_resource",
+                "model_name": model_name,
+                "record_id": record_id,
+                "record": records[0] if records else None
+            })
+        except Exception as e:
+            logger.error(f"Failed to get record: {e}")
+            return json.dumps({"error": f"Failed to get record: {e}"})
+
     async def _execute_prompt(self, prompt_name: str, arguments: Dict[str, Any]) -> str:
         """Execute a prompt request."""
         # Mock implementation
