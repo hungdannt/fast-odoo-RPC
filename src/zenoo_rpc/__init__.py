@@ -60,7 +60,7 @@ except ImportError:
     mcp_server = None
     MCP_SERVER_AVAILABLE = False
 
-__version__ = "0.2.0"
+__version__ = "0.2.3"
 __author__ = "Lê Anh Tuấn"
 __email__ = "justin.le.1105@gmail.com"
 

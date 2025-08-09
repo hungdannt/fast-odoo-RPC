@@ -16,6 +16,30 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 ### Fixed
 - TBD for next release
 
+## [0.2.3] - 2025-08-09
+
+### 🚀 MCP Server Improvements & Bug Fixes
+
+#### Fixed
+- **ZenooClient Connection Methods**: Fixed missing `connect()` and `disconnect()` methods - replaced with proper `login()` and `close()` methods
+- **MCP Server QueryBuilder Error**: Fixed `'QueryBuilder' object has no attribute 'limit'` error by replacing QueryBuilder approach with direct `search_read()` calls
+- **Resource Mock Data**: Replaced mock resource data with real Odoo data - now returns actual models, fields, and records from connected Odoo instance
+- **FastMCP Integration**: Fixed FastMCP.run() method calls to use proper async methods (`run_stdio_async()`, `run_streamable_http_async()`)
+- **HTTP Transport**: Fixed MCP server HTTP transport to work with real MCP library instead of mock implementation
+
+#### Added
+- **Real MCP Library**: Installed and integrated actual MCP library (`mcp[cli]`) replacing mock implementation
+- **Enhanced Resource Handlers**: Added three new resource handlers for real Odoo data:
+  - `_handle_list_models_resource()`: Returns list of available Odoo models
+  - `_handle_model_info_resource()`: Returns model information and field definitions
+  - `_handle_record_resource()`: Returns specific record data
+- **Improved Error Handling**: Enhanced error handling in tools and resources with proper exception catching and logging
+
+#### Changed
+- **MCP Server Architecture**: Migrated from mock FastMCP to real MCP implementation with proper HTTP transport
+- **Tool Implementation**: Refactored `search_records` tool to use `ZenooClient.search_read()` directly instead of QueryBuilder
+- **Resource Data**: All resources now return real data from connected Odoo instance instead of mock responses
+
 ## [0.2.2] - 2025-08-04
 
 ### 🔧 AI Features Improvements & Bug Fixes
