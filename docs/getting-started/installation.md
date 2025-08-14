@@ -18,6 +18,7 @@ pip install zenoo-rpc
 
 This installs the core dependencies:
 - `httpx>=0.25.0` - Modern async HTTP client
+- `h2>=4.0.0` - HTTP/2 support for better performance
 - `pydantic>=2.0.0` - Data validation and type safety
 - `typing-extensions>=4.0.0` - Enhanced type hints
 

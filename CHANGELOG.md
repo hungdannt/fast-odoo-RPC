@@ -16,6 +16,28 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 ### Fixed
 - TBD for next release
 
+## [0.2.4] - 2025-08-14
+
+### Added
+- HTTP/2 support as a standard feature with `h2>=4.0.0` dependency
+- Comprehensive test suite for HTTP/2 functionality
+- Documentation for HTTP/2 support in installation guide
+
+### Changed
+- Updated core dependencies to include `h2>=4.0.0` for HTTP/2 support
+- Enhanced installation documentation to reflect HTTP/2 capabilities
+- Updated README.md with HTTP/2 feature description
+
+### Fixed
+- **Issue #4**: Fixed ImportError when using HTTP/2 by adding `h2` package to core dependencies
+- Resolved "Using http2=True, but the 'h2' package is not installed" error
+- Fixed inconsistency between hardcoded HTTP/2 configuration and missing dependencies
+
+### Technical Details
+- Added `h2>=4.0.0`, `hyperframe>=6.1.0`, and `hpack>=4.1.0` to dependency chain
+- HTTP/2 is now enabled by default for all connections without additional configuration
+- Improved connection performance through HTTP/2 multiplexing and header compression
+
 ## [0.2.3] - 2025-08-09
 
 ### 🚀 MCP Server Improvements & Bug Fixes

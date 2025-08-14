@@ -96,6 +96,16 @@ pip install zenoo-rpc[dev]
 pip install zenoo-rpc[ai,mcp,redis,dev]
 ```
 
+### HTTP/2 Support
+
+Zenoo RPC includes built-in HTTP/2 support for improved performance:
+- **Automatic HTTP/2**: All connections use HTTP/2 when available
+- **Multiplexing**: Multiple requests over a single connection
+- **Header compression**: Reduced bandwidth usage
+- **Server push**: Enhanced performance for compatible servers
+
+No additional configuration required - HTTP/2 support is enabled by default.
+
 ### From Source
 
 ```bash
