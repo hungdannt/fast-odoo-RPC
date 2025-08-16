@@ -1,32 +1,16 @@
-# Zenoo RPC
+# fast-odoo RPC
 
 <div align="center">
 
-**A zen-like, modern async Python library for Odoo RPC with type safety, AI integration, and MCP protocol support**
+**A next-generation, modern async Python library for Odoo RPC with type safety, AI integration, and MCP protocol support**
 
-[![Python 3.8+](https://img.shields.io/badge/python-3.8+-blue.svg)](https://www.python.org/downloads/)
-[![PyPI version](https://img.shields.io/pypi/v/zenoo-rpc.svg)](https://pypi.org/project/zenoo-rpc/)
-[![Python versions](https://img.shields.io/pypi/pyversions/zenoo-rpc.svg)](https://pypi.org/project/zenoo-rpc/)
-[![License: MIT](https://img.shields.io/badge/License-MIT-yellow.svg)](https://opensource.org/licenses/MIT)
-[![CI](https://github.com/tuanle96/zenoo-rpc/workflows/CI/badge.svg)](https://github.com/tuanle96/zenoo-rpc/actions/workflows/ci.yml)
-[![Coverage](https://codecov.io/gh/tuanle96/zenoo-rpc/branch/main/graph/badge.svg)](https://codecov.io/gh/tuanle96/zenoo-rpc)
-[![Documentation](https://img.shields.io/badge/docs-readthedocs-blue.svg)](https://zenoo-rpc.readthedocs.io)
-[![Code style: black](https://img.shields.io/badge/code%20style-black-000000.svg)](https://github.com/psf/black)
-[![Ruff](https://img.shields.io/endpoint?url=https://raw.githubusercontent.com/astral-sh/ruff/main/assets/badge/v2.json)](https://github.com/astral-sh/ruff)
-[![Downloads](https://img.shields.io/pypi/dm/zenoo-rpc.svg)](https://pypi.org/project/zenoo-rpc/)
-[![GitHub stars](https://img.shields.io/github/stars/tuanle96/zenoo-rpc.svg)](https://github.com/tuanle96/zenoo-rpc/stargazers)
-
-[📚 Documentation](https://zenoo-rpc.readthedocs.io) • [🚀 Quick Start](https://zenoo-rpc.readthedocs.io/en/latest/getting-started/quickstart/) • [📦 PyPI](https://pypi.org/project/zenoo-rpc/) • [🐛 Issues](https://github.com/tuanle96/zenoo-rpc/issues) • [💬 Discussions](https://github.com/tuanle96/zenoo-rpc/discussions)
 
 </div>
 
-## 🚀 Why Zenoo RPC?
+## 🚀 Why fast-odoo RPC?
 
-Zenoo RPC is a next-generation Python library designed to replace `odoorpc` with modern Python practices and superior performance. Built from the ground up with async/await, type safety, and developer experience in mind.
+fast-odoo RPC is a next-generation Python library designed to replace `odoorpc` with modern Python practices and superior performance. Built from the ground up with async/await, type safety, and developer experience in mind.
 
-> **"Zen"** - Simple, elegant, and intuitive API design  
-> **"oo"** - Object-oriented with Odoo integration  
-> **"RPC"** - Remote Procedure Call excellence
 
 ### ✨ Key Features
 
@@ -52,7 +36,7 @@ Zenoo RPC is a next-generation Python library designed to replace `odoorpc` with
 - **Poor error handling**: Generic exceptions without context
 - **No caching**: Repeated calls for the same data
 
-### 🎯 Zenoo RPC Solutions
+### 🎯 fast-odoo RPC Solutions
 
 ```python
 # odoorpc (old way)
@@ -60,8 +44,8 @@ Partner = odoo.env['res.partner']
 partner_ids = Partner.search([('is_company', '=', True)], limit=10)
 partners = Partner.browse(partner_ids)  # Second RPC call!
 
-# Zenoo RPC (modern way)
-async with ZenooClient("localhost", port=8069) as client:
+# fast-odoo RPC (modern way)
+async with fast-odooClient("localhost", port=8069) as client:
     await client.login("demo", "admin", "admin")
 
     partners = await client.model(ResPartner).filter(
@@ -74,31 +58,31 @@ async with ZenooClient("localhost", port=8069) as client:
 ### From PyPI (Recommended)
 
 ```bash
-pip install zenoo-rpc
+pip install fast-odoo-rpc
 ```
 
 ### With Optional Dependencies
 
 ```bash
 # For Redis caching support
-pip install zenoo-rpc[redis]
+pip install fast-odoo-rpc[redis]
 
 # For AI features (Gemini, OpenAI, Anthropic)
-pip install zenoo-rpc[ai]
+pip install fast-odoo-rpc[ai]
 
 # For MCP integration (AI assistants)
-pip install zenoo-rpc[mcp]
+pip install fast-odoo-rpc[mcp]
 
 # For development
-pip install zenoo-rpc[dev]
+pip install fast-odoo-rpc[dev]
 
 # All features
-pip install zenoo-rpc[ai,mcp,redis,dev]
+pip install fast-odoo-rpc[ai,mcp,redis,dev]
 ```
 
 ### HTTP/2 Support
 
-Zenoo RPC includes built-in HTTP/2 support for improved performance:
+fast-odoo RPC includes built-in HTTP/2 support for improved performance:
 - **Automatic HTTP/2**: All connections use HTTP/2 when available
 - **Multiplexing**: Multiple requests over a single connection
 - **Header compression**: Reduced bandwidth usage
@@ -106,20 +90,14 @@ Zenoo RPC includes built-in HTTP/2 support for improved performance:
 
 No additional configuration required - HTTP/2 support is enabled by default.
 
-### From Source
 
-```bash
-git clone https://github.com/tuanle96/zenoo-rpc.git
-cd zenoo-rpc
-pip install -e .
-```
 
 ## 🏗️ Architecture
 
-Zenoo RPC follows modern Python best practices with a clean, modular architecture:
+fast-odoo RPC follows modern Python best practices with a clean, modular architecture:
 
 ```
-src/zenoo_rpc/
+src/fast-odoo_rpc/
 ├── client.py              # Main async client
 ├── transport/             # HTTP transport layer
 ├── models/                # Pydantic models
@@ -139,11 +117,11 @@ src/zenoo_rpc/
 
 ```python
 import asyncio
-from zenoo_rpc import ZenooClient
-from zenoo_rpc.models.common import ResPartner
+from fast-odoo_rpc import fast-odooClient
+from fast-odoo_rpc.models.common import ResPartner
 
 async def main():
-    async with ZenooClient("https://your-odoo-server.com") as client:
+    async with fast-odooClient("https://your-odoo-server.com") as client:
         # Authenticate
         await client.login("your_database", "your_username", "your_password")
 
@@ -173,11 +151,11 @@ if __name__ == "__main__":
 
 ## 🔌 MCP Integration - AI Assistant Support
 
-Zenoo RPC provides full **Model Context Protocol (MCP)** support, enabling seamless integration with AI assistants like Claude Desktop, ChatGPT, and other MCP-compatible tools.
+fast-odoo RPC provides full **Model Context Protocol (MCP)** support, enabling seamless integration with AI assistants like Claude Desktop, ChatGPT, and other MCP-compatible tools.
 
 ### 🤖 Use with Claude Desktop
 
-Configure Claude Desktop to use Zenoo RPC as an MCP server:
+Configure Claude Desktop to use fast-odoo RPC as an MCP server:
 
 ```json
 // ~/.config/claude/claude_desktop_config.json
@@ -185,7 +163,7 @@ Configure Claude Desktop to use Zenoo RPC as an MCP server:
   "mcpServers": {
     "odoo": {
       "command": "python",
-      "args": ["-m", "zenoo_rpc.mcp_server.cli"],
+      "args": ["-m", "fast-odoo_rpc.mcp_server.cli"],
       "env": {
         "ODOO_URL": "http://localhost:8069",
         "ODOO_DATABASE": "demo",
@@ -223,10 +201,10 @@ Claude automatically:
 
 ```bash
 # Install with MCP support
-pip install zenoo-rpc[mcp]
+pip install fast-odoo-rpc[mcp]
 
 # Start MCP server
-python -m zenoo_rpc.mcp_server.cli --transport stdio
+python -m fast-odoo_rpc.mcp_server.cli --transport stdio
 ```
 
 ## 🎯 Advanced Features
@@ -243,7 +221,7 @@ children = await partner.child_ids.all()  # Lazy collection
 ### Intelligent Caching
 
 ```python
-async with ZenooClient("localhost", port=8069) as client:
+async with fast-odooClient("localhost", port=8069) as client:
     await client.login("demo", "admin", "admin")
 
     # Setup cache manager
@@ -258,7 +236,7 @@ async with ZenooClient("localhost", port=8069) as client:
 ### Batch Operations
 
 ```python
-async with ZenooClient("localhost", port=8069) as client:
+async with fast-odooClient("localhost", port=8069) as client:
     await client.login("demo", "admin", "admin")
 
     # Setup batch manager
@@ -276,7 +254,7 @@ async with ZenooClient("localhost", port=8069) as client:
 ### Transaction Management
 
 ```python
-async with ZenooClient("localhost", port=8069) as client:
+async with fast-odooClient("localhost", port=8069) as client:
     await client.login("demo", "admin", "admin")
 
     # Setup transaction manager
@@ -296,10 +274,10 @@ async with ZenooClient("localhost", port=8069) as client:
 
 ### 🤖 AI-Powered Features
 
-Zenoo RPC includes cutting-edge AI capabilities powered by LiteLLM and Google Gemini:
+fast-odoo RPC includes cutting-edge AI capabilities powered by LiteLLM and Google Gemini:
 
 ```python
-async with ZenooClient("localhost", port=8069) as client:
+async with fast-odooClient("localhost", port=8069) as client:
     await client.login("demo", "admin", "admin")
 
     # Setup AI capabilities
@@ -339,12 +317,12 @@ async with ZenooClient("localhost", port=8069) as client:
 
 **Installation with AI:**
 ```bash
-pip install zenoo-rpc[ai]
+pip install fast-odoo-rpc[ai]
 ```
 
 ## 🧪 Development Status
 
-Zenoo RPC is currently in **Alpha** stage with active development. The core architecture is stable and functional, but we're continuously improving based on community feedback.
+fast-odoo RPC is currently in **Alpha** stage with active development. The core architecture is stable and functional, but we're continuously improving based on community feedback.
 
 ### Current Status
 
@@ -370,7 +348,7 @@ Zenoo RPC is currently in **Alpha** stage with active development. The core arch
 
 ### Production Readiness
 
-Zenoo RPC is being used in production environments, but we recommend:
+fast-odoo RPC is being used in production environments, but we recommend:
 
 - **Testing**: Thoroughly test in your specific environment
 - **Monitoring**: Implement proper logging and monitoring
@@ -385,23 +363,16 @@ Zenoo RPC is being used in production environments, but we recommend:
 
 ## 🤝 Contributing
 
-We welcome contributions from the community! Whether you're fixing bugs, adding features, improving documentation, or sharing feedback, your contributions help make Zenoo RPC better for everyone.
+We welcome contributions from the community! Whether you're fixing bugs, adding features, improving documentation, or sharing feedback, your contributions help make fast-odoo RPC better for everyone.
 
-### Ways to Contribute
 
-- 🐛 **Report Bugs**: Use our [issue templates](https://github.com/tuanle96/zenoo-rpc/issues/new/choose)
-- ✨ **Request Features**: Share your ideas in [GitHub Discussions](https://github.com/tuanle96/zenoo-rpc/discussions)
-- 📝 **Improve Documentation**: Help us make the docs clearer and more comprehensive
-- 🧪 **Write Tests**: Increase test coverage and add edge cases
-- 🔧 **Fix Issues**: Pick up issues labeled `good first issue` or `help wanted`
-- 💡 **Share Examples**: Contribute real-world usage examples
 
 ### Quick Development Setup
 
 ```bash
 # Clone the repository
-git clone https://github.com/tuanle96/zenoo-rpc.git
-cd zenoo-rpc
+git clone https://github.com/hungdannt/fast-odoo-rpc.git
+cd fast-odoo-rpc
 
 # Install development dependencies
 pip install -e ".[dev,redis]"
@@ -415,7 +386,7 @@ pytest
 # Run quality checks
 ruff check .
 black .
-mypy src/zenoo_rpc
+mypy src/fast-odoo_rpc
 
 # Build documentation locally
 mkdocs serve
@@ -441,49 +412,17 @@ Please read our [Contributing Guide](CONTRIBUTING.md) for detailed information a
 6. **Push** to your branch (`git push origin feature/amazing-feature`)
 7. **Open** a Pull Request
 
-### Getting Help
 
-- 💬 **[GitHub Discussions](https://github.com/tuanle96/zenoo-rpc/discussions)**: Ask questions and get help
-- 📚 **[Documentation](https://zenoo-rpc.readthedocs.io)**: Comprehensive guides and examples
-- 🐛 **[Issues](https://github.com/tuanle96/zenoo-rpc/issues)**: Report bugs or request features
-
-## 🛠️ Development
-
-Want to contribute? Here's how to set up your development environment:
-
-```bash
-# Clone the repository
-git clone https://github.com/tuanle96/zenoo-rpc.git
-cd zenoo-rpc
-
-# Install development dependencies
-pip install -e ".[dev,redis]"
-
-# Install pre-commit hooks (recommended)
-pre-commit install
-
-# Run tests
-pytest
-
-# Run quality checks
-ruff check .
-black .
-mypy src/zenoo_rpc
-```
 
 ## 📚 Documentation
 
-- **[Getting Started](https://zenoo-rpc.readthedocs.io/getting-started/)**: Installation and basic usage
-- **[User Guide](https://zenoo-rpc.readthedocs.io/user-guide/)**: Comprehensive feature documentation
-- **[API Reference](https://zenoo-rpc.readthedocs.io/api/)**: Complete API documentation
-- **[Migration Guide](https://zenoo-rpc.readthedocs.io/migration/)**: Migrating from odoorpc
-- **[Examples](https://zenoo-rpc.readthedocs.io/examples/)**: Real-world usage examples
+- **[Getting Started](https://fast-odoo-rpc.readthedocs.io/getting-started/)**: Installation and basic usage
+- **[User Guide](https://fast-odoo-rpc.readthedocs.io/user-guide/)**: Comprehensive feature documentation
+- **[API Reference](https://fast-odoo-rpc.readthedocs.io/api/)**: Complete API documentation
+- **[Migration Guide](https://fast-odoo-rpc.readthedocs.io/migration/)**: Migrating from odoorpc
+- **[Examples](https://fast-odoo-rpc.readthedocs.io/examples/)**: Real-world usage examples
 
-## 🐛 Support
 
-- **[GitHub Issues](https://github.com/tuanle96/zenoo-rpc/issues)**: Bug reports and feature requests
-- **[GitHub Discussions](https://github.com/tuanle96/zenoo-rpc/discussions)**: Questions and community discussion
-- **[Documentation](https://zenoo-rpc.readthedocs.io)**: Comprehensive guides and API reference
 
 ## 📄 License
 
@@ -498,10 +437,5 @@ This project is licensed under the MIT License - see the [LICENSE](LICENSE) file
 
 ---
 
-**Zenoo RPC**: Because your Odoo integrations deserve modern Python! 🐍✨
+**fast-odoo RPC**: Because your Odoo integrations deserve modern Python! 🐍✨
 
-<div align="center">
-
-**[⭐ Star us on GitHub](https://github.com/tuanle96/zenoo-rpc) • [📦 Try it on PyPI](https://pypi.org/project/zenoo-rpc/) • [📚 Read the Docs](https://zenoo-rpc.readthedocs.io)**
-
-</div>
